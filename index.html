@@ -6,393 +6,332 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#121212">
-    <title>Pixel Quest: Advance</title>
+    <title>Pixel Quest Survival</title>
     
     <style>
         :root {
-            --console-bg: #2a2a2e;
-            --screen-bezel: #111;
-            --accent: #eab308;
-            --danger: #ef4444;
-            --text: #ffffff;
+            --bg: #121212; --surface: #1e1e1e;
+            --accent: #eab308; --danger: #ef4444;
+            --text: #ffffff; --btn-active: #333333;
         }
 
         body { 
-            background: #000; margin: 0; padding: 0;
-            display: flex; align-items: center; justify-content: center;
-            height: 100vh; color: var(--text); font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; 
             overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
 
-        .console {
-            position: relative;
-            display: flex; flex-direction: row; align-items: center; justify-content: space-between;
-            background: var(--console-bg); padding: 20px 30px; border-radius: 40px;
-            box-shadow: inset 0 5px 15px rgba(255,255,255,0.1), 0 10px 40px rgba(0,0,0,0.8);
-            width: 95vw; max-width: 1000px; gap: 20px;
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 90vw; max-width: 400px; margin-bottom: 15px; background: var(--surface);
+            padding: 10px 20px; border-radius: 12px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* Upgraded Najah Branding Tag */
-        .brand-tag {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--accent); /* Bright Gold */
-            font-size: 1rem;
-            letter-spacing: 4px;
-            font-weight: 900;
-            text-transform: uppercase;
-            z-index: 100;
-            pointer-events: none;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        .stat-group { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: bold; }
+        .stat-group svg { width: 20px; height: 20px; fill: var(--accent); }
+        .mode-text { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+        .canvas-container {
+            width: 90vw; height: 90vw; max-width: 400px; max-height: 400px;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 2px solid #333; background: #000;
         }
 
-        .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 4px; }
+        canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
         
+        .controls { 
+            display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(2, 65px); 
+            gap: 12px; margin-top: 30px; 
+        }
+
         .btn {
-            background: #444; border-radius: 8px; border-bottom: 4px solid #222;
+            background: var(--surface); border: 1px solid #333; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: all 0.1s; cursor: pointer;
-        }
-        .btn svg { width: 24px; height: 24px; fill: #aaa; }
-        .btn:active { transform: translateY(4px); border-bottom: 0px solid #222; background: #555; }
-        .btn:active svg { fill: #fff; }
-
-        .up { grid-column: 2; grid-row: 1; border-radius: 8px 8px 4px 4px; }
-        .left { grid-column: 1; grid-row: 2; border-radius: 8px 4px 4px 8px; }
-        .center-hub { grid-column: 2; grid-row: 2; background: #333; border: none; box-shadow: none; border-radius: 4px;}
-        .right { grid-column: 3; grid-row: 2; border-radius: 4px 8px 8px 4px; }
-        .down { grid-column: 2; grid-row: 3; border-radius: 4px 4px 8px 8px; }
-
-        .screen-wrapper {
-            background: var(--screen-bezel); padding: 25px 15px 30px 15px;
-            border-radius: 20px; box-shadow: inset 0 0 20px #000;
-            display: flex; flex-direction: column; align-items: center; position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s, background 0.1s;
         }
 
-        .stats-bar {
-            width: 100%; display: flex; justify-content: space-between;
-            color: #aaa; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .stats-bar span.highlight { color: var(--accent); }
+        .btn svg { width: 30px; height: 30px; fill: white; }
+        .btn:active { background: var(--btn-active); transform: scale(0.92); }
+        .up { grid-column: 2; } .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
 
-        canvas { 
-            width: 100%; max-width: 480px; aspect-ratio: 15 / 10;
-            background: #000; image-rendering: pixelated; 
-            border: 2px solid #333; box-shadow: 0 0 10px #000;
-        }
-
-        .action-side { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 150px; text-align: center; }
-        .status-box { background: #111; padding: 15px; border-radius: 12px; border: 2px solid #333; width: 100%; }
-        #mode-text { font-size: 1.2rem; font-weight: bold; color: #aaa; }
-        
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
             align-items: center; justify-content: center; opacity: 0;
-            pointer-events: none; transition: opacity 0.3s; z-index: 10; border-radius: 20px;
+            pointer-events: none; transition: opacity 0.3s; z-index: 10;
         }
         #overlay.show { opacity: 1; pointer-events: all; }
-        #overlay h1 { color: var(--accent); margin-bottom: 5px; font-size: 2rem;}
+        #overlay h1 { color: var(--accent); margin-bottom: 5px; font-size: 2.5rem; text-align: center;}
+        #overlay p { color: #ccc; margin-bottom: 20px; font-size: 1.1rem; }
         #btn-restart {
-            margin-top: 15px; padding: 10px 20px; font-size: 1rem; background: var(--accent); 
+            padding: 12px 24px; font-size: 1.1rem; background: var(--accent); 
             color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
         }
-
-        @media screen and (orientation: portrait) {
-            .console { flex-direction: column; width: 90vw; padding: 15px; border-radius: 20px; padding-top: 50px; }
-            .brand-tag { top: 20px; }
-            .action-side { flex-direction: row; width: 100%; justify-content: space-around; }
-            canvas { aspect-ratio: 15 / 10; }
-            body::before { content: "Rotate phone for best experience"; color: #888; font-size: 0.8rem; position: absolute; top: 5px; }
-        }
+        /* Game Over specific styles */
+        #overlay.death h1 { color: var(--danger); }
+        #overlay.death #btn-restart { background: var(--danger); color: white; }
     </style>
 </head>
 <body>
 
-    <div class="console">
-        <div class="brand-tag">MADE BY NAJAH</div>
-        
-        <div class="dpad">
-            <div class="btn up" id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-            <div class="btn left" id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-            <div class="center-hub"></div>
-            <div class="btn right" id="ctrl-d"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
-            <div class="btn down" id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+    <div class="header">
+        <div class="stat-group">
+            <svg viewBox="0 0 24 24"><path d="M20.2 2H19.5C19.5 2 19.5 2 19.5 2H4.5C4.5 2 4.5 2 4.5 2H3.8C2.2 2 1 3.2 1 4.8V6.5C1 9.8 3.5 12.5 6.8 12.8C7.6 14.6 9.4 16 11.5 16V19H8.5C7.7 19 7 19.7 7 20.5V22H17V20.5C17 19.7 16.3 19 15.5 19H12.5V16C14.6 16 16.4 14.6 17.2 12.8C20.5 12.5 23 9.8 23 6.5V4.8C23 3.2 21.8 2 20.2 2ZM5.5 10.9C4 10.3 3 8.8 3 7V5H5.5V10.9ZM21 7C21 8.8 20 10.3 18.5 10.9V5H21V7Z"/></svg>
+            <span id="score">0</span> / <span id="total">0</span>
         </div>
+        <div class="mode-text" id="mode">Run!</div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="gameCanvas" width="320" height="320"></canvas>
+    </div>
 
-        <div class="screen-wrapper">
-            <div class="stats-bar">
-                <div>Score: <span class="highlight" id="score">0</span>/<span id="total">0</span></div>
-                <div>PIXEL QUEST</div>
-            </div>
-            
-            <canvas id="gameCanvas" width="480" height="320"></canvas>
-            
-            <div id="overlay">
-                <h1 id="end-title">Start Game</h1>
-                <p id="end-desc" style="color:#aaa; font-size: 0.9rem;">Tap to begin.</p>
-                <button id="btn-restart">PLAY</button>
-            </div>
-        </div>
+    <div class="controls">
+        <div class="btn up" id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left" id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down" id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn right" id="ctrl-d"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+    </div>
 
-        <div class="action-side">
-            <div class="status-box">
-                <div style="color: #666; font-size: 0.8rem; margin-bottom: 5px;">STATUS</div>
-                <div id="mode-text">SURVIVE</div>
-            </div>
-        </div>
+    <div id="overlay">
+        <h1 id="end-title">Victory!</h1>
+        <p id="end-desc">You cleared the dungeon.</p>
+        <button id="btn-restart">Play Again</button>
     </div>
 
     <script>
-        let audioCtx;
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function playSound(type) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            
-            if (type === 'move') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(150, now);
-                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'coin') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'sword') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-                osc.start(now); osc.stop(now + 0.2);
-            } else if (type === 'hit') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-                osc.start(now); osc.stop(now + 0.2);
-            } else if (type === 'die') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
-                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-                osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'win') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now + 0.15); 
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                osc.start(now); osc.stop(now + 0.4);
-            }
-        }
-
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const TILE_SIZE = 32; const GRID_W = 15; const GRID_H = 10;
-        
+        const scoreEl = document.getElementById('score');
+        const totalEl = document.getElementById('total');
+        const modeEl = document.getElementById('mode');
+        const overlay = document.getElementById('overlay');
+        const endTitle = document.getElementById('end-title');
+        const endDesc = document.getElementById('end-desc');
+
+        const TILE_SIZE = 32;
+        const GRID_SIZE = 10;
+        const NUM_TROPHIES = 5;
+        const NUM_ENEMIES = 3;
+
+        // Base Map (Just Walls '1' and Floor '0')
         const map = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,0,1,0,1,1,1,0,1,0,1],
-            [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
-            [1,0,0,0,1,1,1,1,0,0,0,0,0,0,1],
-            [1,1,0,0,0,0,0,0,0,1,1,1,0,1,1],
-            [1,0,0,1,1,0,1,1,0,0,0,0,0,0,1],
-            [1,0,1,1,0,0,0,1,1,1,0,1,1,0,1],
-            [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,1,1,0,1],
+            [1,0,1,0,0,0,0,1,0,1],
+            [1,0,0,0,1,1,0,0,0,1],
+            [1,1,1,0,0,0,0,1,1,1],
+            [1,0,0,0,1,1,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
         ];
 
-        let player, sword, trophies, enemies, score, isGameOver;
-        const NUM_TROPHIES = 6; const NUM_ENEMIES = 4;
+        // Entities
+        let player = { x: 1, y: 1, hasSword: false, dead: false };
+        let sword = { x: 0, y: 0, collected: false };
+        let trophies = [];
+        let enemies = [];
+        let score = 0;
+        let isGameOver = false;
 
         const images = {};
         const assets = ['hero', 'enemy', 'grass', 'wall', 'trophy', 'sword'];
-        let loadedAttempts = 0;
+        let loadedCount = 0;
 
-        // Smart Loader: Handles errors gracefully
         assets.forEach(name => {
             const img = new Image();
-            img.src = `${name}.png`; // Make SURE your files are exactly lowercase.png on GitHub!
-            img.onload = () => { images[name] = img; checkLoad(); };
-            img.onerror = () => { images[name] = null; checkLoad(); }; // Fails safely
+            img.src = `${name}.png`;
+            img.onload = () => { if (++loadedCount === assets.length) { initGame(); requestAnimationFrame(gameLoop); }};
+            images[name] = img;
         });
 
-        function checkLoad() {
-            loadedAttempts++;
-            if (loadedAttempts === assets.length) {
-                document.getElementById('overlay').classList.add('show');
-                drawStatic(); // Draw initial frame
-            }
-        }
-
+        // Helper: Find an empty tile for spawning
         function getRandomEmptyTile() {
             let x, y;
             while(true) {
-                x = Math.floor(Math.random() * GRID_W); y = Math.floor(Math.random() * GRID_H);
-                if (map[y][x] === 0 && x !== 1 && y !== 1) {
+                x = Math.floor(Math.random() * GRID_SIZE);
+                y = Math.floor(Math.random() * GRID_SIZE);
+                if (map[y][x] === 0 && x !== 1 && y !== 1) { // 1,1 is player spawn
+                    // Check if another entity is already here
                     let occupied = trophies.some(t => t.x === x && t.y === y) || 
                                    enemies.some(e => e.x === x && e.y === y) ||
-                                   (sword && sword.x === x && sword.y === y);
+                                   (sword.x === x && sword.y === y);
                     if (!occupied) return {x, y};
                 }
             }
         }
 
         function initGame() {
-            initAudio();
             player = { x: 1, y: 1, hasSword: false, dead: false };
-            score = 0; isGameOver = false;
-            
-            document.getElementById('overlay').classList.remove('show');
-            document.getElementById('mode-text').innerText = "SURVIVE";
-            document.getElementById('mode-text').style.color = "#aaa";
-            document.getElementById('score').innerText = score;
-            document.getElementById('total').innerText = NUM_TROPHIES;
+            score = 0;
+            isGameOver = false;
+            overlay.classList.remove('show', 'death');
+            modeEl.innerText = "Run!";
+            modeEl.style.color = "#aaa";
+            scoreEl.innerText = score;
+            totalEl.innerText = NUM_TROPHIES;
 
-            trophies = []; for(let i=0; i<NUM_TROPHIES; i++) trophies.push(getRandomEmptyTile());
-            enemies = []; for(let i=0; i<NUM_ENEMIES; i++) enemies.push(getRandomEmptyTile());
-            
+            // Spawn Trophies
+            trophies = [];
+            for(let i=0; i<NUM_TROPHIES; i++) trophies.push(getRandomEmptyTile());
+
+            // Spawn Enemies
+            enemies = [];
+            for(let i=0; i<NUM_ENEMIES; i++) enemies.push(getRandomEmptyTile());
+
+            // Spawn Sword
             const sPos = getRandomEmptyTile();
             sword = { x: sPos.x, y: sPos.y, collected: false };
-            requestAnimationFrame(gameLoop);
         }
 
         function triggerGameOver(win) {
             isGameOver = true;
-            const overlay = document.getElementById('overlay');
             if (win) {
-                playSound('win');
-                document.getElementById('end-title').innerText = "VICTORY!";
-                document.getElementById('end-title').style.color = "var(--accent)";
-                document.getElementById('end-desc').innerText = "Dungeon Cleared.";
+                endTitle.innerText = "Victory!";
+                endDesc.innerText = "You collected all trophies!";
+                overlay.classList.remove('death');
             } else {
-                playSound('die');
-                document.getElementById('end-title').innerText = "YOU DIED";
-                document.getElementById('end-title').style.color = "var(--danger)";
-                document.getElementById('end-desc').innerText = "The glitch got you.";
+                endTitle.innerText = "You Died!";
+                endDesc.innerText = "The glitch caught you.";
+                overlay.classList.add('death');
             }
-            setTimeout(() => overlay.classList.add('show'), 400);
+            setTimeout(() => overlay.classList.add('show'), 300);
         }
 
+        // Enemy AI Logic (Moves 1 square towards player)
         function moveEnemies() {
             enemies.forEach((enemy, index) => {
-                let dx = player.x - enemy.x; let dy = player.y - enemy.y;
-                let nextX = enemy.x; let nextY = enemy.y;
+                let dx = player.x - enemy.x;
+                let dy = player.y - enemy.y;
+                let nextX = enemy.x;
+                let nextY = enemy.y;
 
+                // Move on the axis where the player is furthest
                 if (Math.abs(dx) > Math.abs(dy)) {
                     nextX += Math.sign(dx);
+                    // If wall or another enemy blocks, try Y axis
                     if (map[nextY][nextX] === 1 || enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                        nextX = enemy.x; nextY += Math.sign(dy);
+                        nextX = enemy.x;
+                        nextY += Math.sign(dy);
                     }
                 } else {
                     nextY += Math.sign(dy);
+                    // If wall or another enemy blocks, try X axis
                     if (map[nextY][nextX] === 1 || enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                        nextY = enemy.y; nextX += Math.sign(dx);
+                        nextY = enemy.y;
+                        nextX += Math.sign(dx);
                     }
                 }
 
+                // Final check before committing move
                 if (map[nextY][nextX] !== 1 && !enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                    enemy.x = nextX; enemy.y = nextY;
+                    enemy.x = nextX;
+                    enemy.y = nextY;
                 }
 
+                // Did enemy catch player?
                 if (enemy.x === player.x && enemy.y === player.y) {
-                    if (player.hasSword) { enemy.dead = true; playSound('hit'); } 
-                    else { player.dead = true; triggerGameOver(false); }
+                    if (player.hasSword) {
+                        enemy.dead = true; // Slayed by player
+                    } else {
+                        player.dead = true;
+                        triggerGameOver(false);
+                    }
                 }
             });
+
+            // Remove dead enemies
             enemies = enemies.filter(e => !e.dead);
         }
 
         function movePlayer(dir) {
-            if (isGameOver || document.getElementById('overlay').classList.contains('show')) return;
-            initAudio(); 
+            if (isGameOver) return;
             
-            let nextX = player.x; let nextY = player.y;
-            if (dir === 'w') nextY--; if (dir === 's') nextY++;
-            if (dir === 'a') nextX--; if (dir === 'd') nextX++;
+            let nextX = player.x;
+            let nextY = player.y;
+            if (dir === 'w') nextY--;
+            if (dir === 's') nextY++;
+            if (dir === 'a') nextX--;
+            if (dir === 'd') nextX++;
 
-            if (nextY >= 0 && nextY < GRID_H && nextX >= 0 && nextX < GRID_W) {
-                if (map[nextY][nextX] === 1) return; 
-                
-                player.x = nextX; player.y = nextY;
-                let moved = true;
+            if (nextY >= 0 && nextY < GRID_SIZE && nextX >= 0 && nextX < GRID_SIZE) {
+                if (map[nextY][nextX] === 1) return; // Hit wall, invalid turn
 
+                player.x = nextX; 
+                player.y = nextY;
+
+                // Check interactions on the new tile
+                // 1. Trophies
                 let tIndex = trophies.findIndex(t => t.x === player.x && t.y === player.y);
                 if (tIndex > -1) {
-                    trophies.splice(tIndex, 1); score++; playSound('coin'); moved = false;
-                    document.getElementById('score').innerText = score;
+                    trophies.splice(tIndex, 1);
+                    score++;
+                    scoreEl.innerText = score;
                     if (score >= NUM_TROPHIES) return triggerGameOver(true);
                 }
 
+                // 2. Sword
                 if (!sword.collected && player.x === sword.x && player.y === sword.y) {
-                    sword.collected = true; player.hasSword = true; playSound('sword'); moved = false;
-                    const modeText = document.getElementById('mode-text');
-                    modeText.innerText = "SLAYER"; modeText.style.color = "var(--accent)";
+                    sword.collected = true;
+                    player.hasSword = true;
+                    modeEl.innerText = "Slayer Mode!";
+                    modeEl.style.color = "var(--accent)";
                 }
 
+                // 3. Enemies (Did player step ON an enemy?)
                 let eIndex = enemies.findIndex(e => e.x === player.x && e.y === player.y);
                 if (eIndex > -1) {
-                    if (player.hasSword) { enemies.splice(eIndex, 1); playSound('hit'); moved = false; } 
-                    else { player.dead = true; moved = false; return triggerGameOver(false); }
+                    if (player.hasSword) {
+                        enemies.splice(eIndex, 1); // Kill it
+                    } else {
+                        player.dead = true;
+                        return triggerGameOver(false);
+                    }
                 }
 
-                if (moved) playSound('move');
+                // If turn is valid and player is alive, enemies take their turn
                 moveEnemies();
             }
         }
 
-        ['w', 'a', 's', 'd'].forEach(key => {
+        const dirs = ['w', 'a', 's', 'd'];
+        dirs.forEach(key => {
             const btn = document.getElementById(`ctrl-${key}`);
             btn.addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(key); });
             btn.addEventListener('mousedown', (e) => { e.preventDefault(); movePlayer(key); });
         });
         
+        // Keyboard support for testing
         window.addEventListener('keydown', e => {
             const keys = { w: 'w', ArrowUp: 'w', s: 's', ArrowDown: 's', a: 'a', ArrowLeft: 'a', d: 'd', ArrowRight: 'd' };
             if (keys[e.key]) movePlayer(keys[e.key]);
         });
 
         document.getElementById('btn-restart').addEventListener('click', initGame);
-
-        // Safe Drawing Function
-        function drawEntity(name, x, y, fallbackColor) {
-            if (images[name] && images[name].complete && images[name].naturalWidth !== 0) {
-                ctx.drawImage(images[name], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            } else {
-                ctx.fillStyle = fallbackColor;
-                ctx.fillRect((x * TILE_SIZE) + 4, (y * TILE_SIZE) + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-            }
-        }
-
-        function drawStatic() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let y = 0; y < GRID_H; y++) {
-                for (let x = 0; x < GRID_W; x++) {
-                    if (images['grass'] && images['grass'].complete && images['grass'].naturalWidth !== 0) {
-                        ctx.drawImage(images['grass'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    }
-                    if (map[y][x] === 1) {
-                        if (images['wall'] && images['wall'].complete && images['wall'].naturalWidth !== 0) {
-                            ctx.drawImage(images['wall'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                        } else { 
-                            ctx.fillStyle = '#222'; 
-                            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE); 
-                        }
-                    }
-                }
-            }
-        }
+        document.getElementById('btn-restart').addEventListener('touchstart', (e) => { e.preventDefault(); initGame(); });
 
         function gameLoop() {
-            if(isGameOver) return; 
-            drawStatic();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            if (!sword.collected) drawEntity('sword', sword.x, sword.y, '#06b6d4'); // Cyan fallback
-            trophies.forEach(t => drawEntity('trophy', t.x, t.y, '#eab308')); // Gold fallback
-            enemies.forEach(e => drawEntity('enemy', e.x, e.y, '#a855f7')); // Purple fallback
-            if (!player.dead) drawEntity('hero', player.x, player.y, '#ffffff'); // White fallback
+            // 1. Draw Map Base
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    ctx.drawImage(images.grass, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (map[y][x] === 1) ctx.drawImage(images.wall, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+
+            // 2. Draw Entities
+            if (!sword.collected) ctx.drawImage(images.sword, sword.x * TILE_SIZE, sword.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            trophies.forEach(t => ctx.drawImage(images.trophy, t.x * TILE_SIZE, t.y * TILE_SIZE, TILE_SIZE, TILE_SIZE));
+            enemies.forEach(e => ctx.drawImage(images.enemy, e.x * TILE_SIZE, e.y * TILE_SIZE, TILE_SIZE, TILE_SIZE));
+            
+            // 3. Draw Player (if alive)
+            if (!player.dead) ctx.drawImage(images.hero, player.x * TILE_SIZE, player.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             
             requestAnimationFrame(gameLoop);
         }
