@@ -32,19 +32,20 @@
             width: 95vw; max-width: 1000px; gap: 20px;
         }
 
-        /* Najah Branding Tag */
+        /* Upgraded Najah Branding Tag */
         .brand-tag {
             position: absolute;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            color: #1a1a1c;
-            text-shadow: 1px 1px 0px rgba(255,255,255,0.1);
-            font-size: 0.85rem;
+            color: var(--accent); /* Bright Gold */
+            font-size: 1rem;
             letter-spacing: 4px;
             font-weight: 900;
             text-transform: uppercase;
+            z-index: 100;
             pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 4px; }
@@ -65,7 +66,7 @@
         .down { grid-column: 2; grid-row: 3; border-radius: 4px 4px 8px 8px; }
 
         .screen-wrapper {
-            background: var(--screen-bezel); padding: 25px 15px 30px 15px; /* Extra top padding for brand */
+            background: var(--screen-bezel); padding: 25px 15px 30px 15px;
             border-radius: 20px; box-shadow: inset 0 0 20px #000;
             display: flex; flex-direction: column; align-items: center; position: relative;
         }
@@ -101,8 +102,8 @@
         }
 
         @media screen and (orientation: portrait) {
-            .console { flex-direction: column; width: 90vw; padding: 15px; border-radius: 20px; padding-top: 40px; }
-            .brand-tag { top: 15px; }
+            .console { flex-direction: column; width: 90vw; padding: 15px; border-radius: 20px; padding-top: 50px; }
+            .brand-tag { top: 20px; }
             .action-side { flex-direction: row; width: 100%; justify-content: space-around; }
             canvas { aspect-ratio: 15 / 10; }
             body::before { content: "Rotate phone for best experience"; color: #888; font-size: 0.8rem; position: absolute; top: 5px; }
@@ -213,7 +214,7 @@
         // Smart Loader: Handles errors gracefully
         assets.forEach(name => {
             const img = new Image();
-            img.src = `${name}.png`;
+            img.src = `${name}.png`; // Make SURE your files are exactly lowercase.png on GitHub!
             img.onload = () => { images[name] = img; checkLoad(); };
             img.onerror = () => { images[name] = null; checkLoad(); }; // Fails safely
         });
@@ -222,7 +223,7 @@
             loadedAttempts++;
             if (loadedAttempts === assets.length) {
                 document.getElementById('overlay').classList.add('show');
-                drawStatic();
+                drawStatic(); // Draw initial frame
             }
         }
 
@@ -356,11 +357,11 @@
         document.getElementById('btn-restart').addEventListener('click', initGame);
 
         // Safe Drawing Function
-        function drawEntity(name, x, y, color) {
-            if (images[name]) {
+        function drawEntity(name, x, y, fallbackColor) {
+            if (images[name] && images[name].complete && images[name].naturalWidth !== 0) {
                 ctx.drawImage(images[name], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             } else {
-                ctx.fillStyle = color;
+                ctx.fillStyle = fallbackColor;
                 ctx.fillRect((x * TILE_SIZE) + 4, (y * TILE_SIZE) + 4, TILE_SIZE - 8, TILE_SIZE - 8);
             }
         }
@@ -369,10 +370,16 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let y = 0; y < GRID_H; y++) {
                 for (let x = 0; x < GRID_W; x++) {
-                    if (images['grass']) ctx.drawImage(images['grass'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (images['grass'] && images['grass'].complete && images['grass'].naturalWidth !== 0) {
+                        ctx.drawImage(images['grass'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    }
                     if (map[y][x] === 1) {
-                        if (images['wall']) ctx.drawImage(images['wall'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                        else { ctx.fillStyle = '#222'; ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+                        if (images['wall'] && images['wall'].complete && images['wall'].naturalWidth !== 0) {
+                            ctx.drawImage(images['wall'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                        } else { 
+                            ctx.fillStyle = '#222'; 
+                            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE); 
+                        }
                     }
                 }
             }
@@ -382,10 +389,10 @@
             if(isGameOver) return; 
             drawStatic();
             
-            if (!sword.collected) drawEntity('sword', sword.x, sword.y, 'cyan');
-            trophies.forEach(t => drawEntity('trophy', t.x, t.y, 'gold'));
-            enemies.forEach(e => drawEntity('enemy', e.x, e.y, 'purple'));
-            if (!player.dead) drawEntity('hero', player.x, player.y, 'white');
+            if (!sword.collected) drawEntity('sword', sword.x, sword.y, '#06b6d4'); // Cyan fallback
+            trophies.forEach(t => drawEntity('trophy', t.x, t.y, '#eab308')); // Gold fallback
+            enemies.forEach(e => drawEntity('enemy', e.x, e.y, '#a855f7')); // Purple fallback
+            if (!player.dead) drawEntity('hero', player.x, player.y, '#ffffff'); // White fallback
             
             requestAnimationFrame(gameLoop);
         }
