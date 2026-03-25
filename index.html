@@ -10,331 +10,603 @@
     
     <style>
         :root {
-            --bg: #121212; --surface: #1e1e1e;
-            --accent: #eab308; --danger: #ef4444;
-            --text: #ffffff; --btn-active: #333333;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface2: #252525;
+            --accent: #eab308;
+            --danger: #ef4444;
+            --text: #ffffff;
+            --muted: #888;
+            --btn-active: #333;
+            --border: #2e2e2e;
         }
 
-        body { 
-            background: var(--bg); margin: 0; padding: 0;
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            margin: 0; padding: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; 
-            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+            min-height: 100vh; color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden; touch-action: none;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        /* ─── PORTRAIT LAYOUT ─── */
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            width: 90vw; max-width: 400px; margin-bottom: 15px; background: var(--surface);
-            padding: 10px 20px; border-radius: 12px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: min(92vw, 440px);
+            padding: 10px 18px;
+            background: var(--surface);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin: 10px 0 8px;
         }
 
-        .stat-group { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: bold; }
-        .stat-group svg { width: 20px; height: 20px; fill: var(--accent); }
-        .mode-text { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-group {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.05rem; font-weight: 700;
+        }
+        .stat-group svg { width: 18px; height: 18px; fill: var(--accent); }
 
-        .canvas-container {
-            width: 90vw; height: 90vw; max-width: 400px; max-height: 400px;
-            border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border: 2px solid #333; background: #000;
+        .mode-badge {
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.2px; color: var(--muted);
+            background: var(--surface2); padding: 4px 10px;
+            border-radius: 20px; border: 1px solid var(--border);
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .mode-badge.slayer {
+            color: var(--accent);
+            border-color: var(--accent);
+            text-shadow: 0 0 8px rgba(234,179,8,0.4);
         }
 
-        canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
-        
-        .controls { 
-            display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(2, 65px); 
-            gap: 12px; margin-top: 30px; 
+        .canvas-wrap {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+            background: #000;
+            /* Size set by JS */
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* portrait controls: cross pad below canvas */
+        #controls-portrait {
+            display: grid;
+            grid-template-columns: repeat(3, 62px);
+            grid-template-rows: repeat(2, 62px);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        /* landscape controls: left pad + right pad flanking canvas */
+        #controls-landscape {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+        #controls-landscape-right {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+        }
+        /* landscape row */
+        #landscape-row {
+            display: none;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 58px);
+            grid-template-rows: repeat(2, 58px);
+            gap: 8px;
         }
 
         .btn {
-            background: var(--surface); border: 1px solid #333; border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s, background 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: transform 0.08s, background 0.1s;
+            cursor: pointer;
         }
+        .btn svg { width: 28px; height: 28px; fill: white; }
+        .btn:active, .btn.pressed { background: var(--btn-active); transform: scale(0.9); }
 
-        .btn svg { width: 30px; height: 30px; fill: white; }
-        .btn:active { background: var(--btn-active); transform: scale(0.92); }
-        .up { grid-column: 2; } .left { grid-column: 1; grid-row: 2; }
-        .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
+        .up    { grid-column: 2; grid-row: 1; }
+        .left  { grid-column: 1; grid-row: 2; }
+        .down  { grid-column: 2; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
 
+        /* ─── MADE BY TAG ─── */
+        .made-by {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            color: var(--muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 5px;
+            opacity: 0.6;
+        }
+        .made-by span { color: var(--accent); font-weight: 700; }
+
+        /* ─── OVERLAY ─── */
         #overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; opacity: 0;
-            pointer-events: none; transition: opacity 0.3s; z-index: 10;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+            gap: 6px;
         }
         #overlay.show { opacity: 1; pointer-events: all; }
-        #overlay h1 { color: var(--accent); margin-bottom: 5px; font-size: 2.5rem; text-align: center;}
-        #overlay p { color: #ccc; margin-bottom: 20px; font-size: 1.1rem; }
-        #btn-restart {
-            padding: 12px 24px; font-size: 1.1rem; background: var(--accent); 
-            color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+
+        .overlay-icon { font-size: 3.5rem; margin-bottom: 4px; }
+        #overlay h1 {
+            color: var(--accent); margin: 0;
+            font-size: 2.2rem; text-align: center;
+            letter-spacing: -0.5px;
         }
-        /* Game Over specific styles */
+        #overlay p { color: #aaa; margin: 6px 0 18px; font-size: 1rem; text-align: center; }
+        #btn-restart {
+            padding: 12px 28px; font-size: 1rem;
+            background: var(--accent); color: #000;
+            border: none; border-radius: 10px; font-weight: 700;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        #btn-restart:active { transform: scale(0.96); }
         #overlay.death h1 { color: var(--danger); }
         #overlay.death #btn-restart { background: var(--danger); color: white; }
+
+        /* ─── LANDSCAPE MEDIA ─── */
+        @media (orientation: landscape) {
+            body { justify-content: center; }
+
+            .header {
+                width: auto;
+                min-width: 320px;
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                margin: 0;
+            }
+
+            #controls-portrait { display: none; }
+
+            #landscape-row { display: flex; }
+
+            #controls-landscape,
+            #controls-landscape-right { display: flex; }
+
+            .made-by {
+                position: absolute;
+                bottom: 8px;
+                right: 14px;
+                margin: 0;
+            }
+        }
     </style>
 </head>
 <body>
 
+<div id="game-wrapper">
+
+    <!-- Header -->
     <div class="header">
         <div class="stat-group">
-            <svg viewBox="0 0 24 24"><path d="M20.2 2H19.5C19.5 2 19.5 2 19.5 2H4.5C4.5 2 4.5 2 4.5 2H3.8C2.2 2 1 3.2 1 4.8V6.5C1 9.8 3.5 12.5 6.8 12.8C7.6 14.6 9.4 16 11.5 16V19H8.5C7.7 19 7 19.7 7 20.5V22H17V20.5C17 19.7 16.3 19 15.5 19H12.5V16C14.6 16 16.4 14.6 17.2 12.8C20.5 12.5 23 9.8 23 6.5V4.8C23 3.2 21.8 2 20.2 2ZM5.5 10.9C4 10.3 3 8.8 3 7V5H5.5V10.9ZM21 7C21 8.8 20 10.3 18.5 10.9V5H21V7Z"/></svg>
-            <span id="score">0</span> / <span id="total">0</span>
+            <svg viewBox="0 0 24 24"><path d="M20.2 2H19.5H4.5H3.8C2.2 2 1 3.2 1 4.8V6.5C1 9.8 3.5 12.5 6.8 12.8C7.6 14.6 9.4 16 11.5 16V19H8.5C7.7 19 7 19.7 7 20.5V22H17V20.5C17 19.7 16.3 19 15.5 19H12.5V16C14.6 16 16.4 14.6 17.2 12.8C20.5 12.5 23 9.8 23 6.5V4.8C23 3.2 21.8 2 20.2 2ZM5.5 10.9C4 10.3 3 8.8 3 7V5H5.5V10.9ZM21 7C21 8.8 20 10.3 18.5 10.9V5H21V7Z"/></svg>
+            <span id="score">0</span>&nbsp;/&nbsp;<span id="total">0</span>
         </div>
-        <div class="mode-text" id="mode">Run!</div>
-    </div>
-    
-    <div class="canvas-container">
-        <canvas id="gameCanvas" width="320" height="320"></canvas>
+        <div class="mode-badge" id="mode">Run!</div>
     </div>
 
-    <div class="controls">
-        <div class="btn up" id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-        <div class="btn left" id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-        <div class="btn down" id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+    <!-- PORTRAIT: just canvas + controls stacked -->
+    <!-- LANDSCAPE: canvas flanked by dpads -->
+
+    <div id="landscape-row">
+        <!-- Left dpad (landscape) -->
+        <div id="controls-landscape">
+            <div class="dpad">
+                <div class="btn up"    id="ctrl-w-ls"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+                <div class="btn left"  id="ctrl-a-ls"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+                <div class="btn down"  id="ctrl-s-ls"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+                <div class="btn right" id="ctrl-d-ls"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <!-- Right side (landscape placeholder for balance) -->
+        <div id="controls-landscape-right">
+            <div style="width: calc(3*58px + 2*8px)"></div>
+        </div>
+    </div>
+
+    <!-- Portrait canvas (same element, just repositioned by JS) -->
+
+    <!-- Portrait controls -->
+    <div id="controls-portrait">
+        <div class="btn up"    id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left"  id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down"  id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
         <div class="btn right" id="ctrl-d"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
     </div>
 
-    <div id="overlay">
-        <h1 id="end-title">Victory!</h1>
-        <p id="end-desc">You cleared the dungeon.</p>
-        <button id="btn-restart">Play Again</button>
-    </div>
+    <div class="made-by">made by <span>Najah</span> ✦</div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const totalEl = document.getElementById('total');
-        const modeEl = document.getElementById('mode');
-        const overlay = document.getElementById('overlay');
-        const endTitle = document.getElementById('end-title');
-        const endDesc = document.getElementById('end-desc');
+<!-- Overlay -->
+<div id="overlay">
+    <div class="overlay-icon" id="end-icon">🏆</div>
+    <h1 id="end-title">Victory!</h1>
+    <p id="end-desc">You collected all trophies!</p>
+    <button id="btn-restart">Play Again</button>
+</div>
 
-        const TILE_SIZE = 32;
-        const GRID_SIZE = 10;
-        const NUM_TROPHIES = 5;
-        const NUM_ENEMIES = 3;
+<script>
+const canvas  = document.getElementById('gameCanvas');
+const ctx     = canvas.getContext('2d');
+const wrap    = document.getElementById('canvas-wrap');
+const lsRow   = document.getElementById('landscape-row');
+const scoreEl = document.getElementById('score');
+const totalEl = document.getElementById('total');
+const modeEl  = document.getElementById('mode');
+const overlay = document.getElementById('overlay');
+const endTitle= document.getElementById('end-title');
+const endDesc = document.getElementById('end-desc');
+const endIcon = document.getElementById('end-icon');
 
-        // Base Map (Just Walls '1' and Floor '0')
-        const map = [
-            [1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,1,1,0,1],
-            [1,0,1,0,0,0,0,1,0,1],
-            [1,0,0,0,1,1,0,0,0,1],
-            [1,1,1,0,0,0,0,1,1,1],
-            [1,0,0,0,1,1,0,0,0,1],
-            [1,0,1,1,1,1,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1]
-        ];
+const TILE = 16; // internal tile size (pixel art is 16x16)
 
-        // Entities
-        let player = { x: 1, y: 1, hasSword: false, dead: false };
-        let sword = { x: 0, y: 0, collected: false };
-        let trophies = [];
-        let enemies = [];
-        let score = 0;
-        let isGameOver = false;
+// ─── EXPANDED MAP (14 cols × 14 rows landscape, falls back to 10×10 portrait) ───
+const MAP_PORTRAIT = [
+    [1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,1,1,0,1],
+    [1,0,1,0,0,0,0,1,0,1],
+    [1,0,0,0,1,1,0,0,0,1],
+    [1,1,1,0,0,0,0,1,1,1],
+    [1,0,0,0,1,1,0,0,0,1],
+    [1,0,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1]
+];
 
-        const images = {};
-        const assets = ['hero', 'enemy', 'grass', 'wall', 'trophy', 'sword'];
-        let loadedCount = 0;
+const MAP_LANDSCAPE = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1],
+    [1,0,1,0,0,1,0,0,0,0,1,1,0,0,0,1],
+    [1,0,0,0,1,1,0,1,0,0,1,0,0,1,0,1],
+    [1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1],
+    [1,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1],
+    [1,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,1,0,0,1,0,0,1],
+    [1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+    [1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,1],
+    [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
 
-        assets.forEach(name => {
-            const img = new Image();
-            img.src = `${name}.png`;
-            img.onload = () => { if (++loadedCount === assets.length) { initGame(); requestAnimationFrame(gameLoop); }};
-            images[name] = img;
-        });
+let map, COLS, ROWS;
+let NUM_TROPHIES, NUM_ENEMIES;
 
-        // Helper: Find an empty tile for spawning
-        function getRandomEmptyTile() {
-            let x, y;
-            while(true) {
-                x = Math.floor(Math.random() * GRID_SIZE);
-                y = Math.floor(Math.random() * GRID_SIZE);
-                if (map[y][x] === 0 && x !== 1 && y !== 1) { // 1,1 is player spawn
-                    // Check if another entity is already here
-                    let occupied = trophies.some(t => t.x === x && t.y === y) || 
-                                   enemies.some(e => e.x === x && e.y === y) ||
-                                   (sword.x === x && sword.y === y);
-                    if (!occupied) return {x, y};
-                }
-            }
-        }
+function isLandscape() {
+    return window.innerWidth > window.innerHeight;
+}
 
-        function initGame() {
-            player = { x: 1, y: 1, hasSword: false, dead: false };
-            score = 0;
-            isGameOver = false;
-            overlay.classList.remove('show', 'death');
-            modeEl.innerText = "Run!";
-            modeEl.style.color = "#aaa";
-            scoreEl.innerText = score;
-            totalEl.innerText = NUM_TROPHIES;
+function setupMap() {
+    if (isLandscape()) {
+        map = MAP_LANDSCAPE.map(r => [...r]);
+        COLS = map[0].length;
+        ROWS = map.length;
+        NUM_TROPHIES = 7;
+        NUM_ENEMIES  = 4;
+    } else {
+        map = MAP_PORTRAIT.map(r => [...r]);
+        COLS = map[0].length;
+        ROWS = map.length;
+        NUM_TROPHIES = 5;
+        NUM_ENEMIES  = 3;
+    }
+}
 
-            // Spawn Trophies
-            trophies = [];
-            for(let i=0; i<NUM_TROPHIES; i++) trophies.push(getRandomEmptyTile());
+// ─── CANVAS SIZING ───
+function sizeCanvas() {
+    setupMap();
+    const ls = isLandscape();
 
-            // Spawn Enemies
-            enemies = [];
-            for(let i=0; i<NUM_ENEMIES; i++) enemies.push(getRandomEmptyTile());
+    if (ls) {
+        // Available height minus header (≈55px) and made-by (≈30px)
+        const avail = Math.min(window.innerHeight - 95, window.innerWidth * 0.55);
+        const tileSize = Math.floor(avail / ROWS);
+        canvas.width  = COLS * TILE;
+        canvas.height = ROWS * TILE;
+        wrap.style.width  = COLS * tileSize + 'px';
+        wrap.style.height = ROWS * tileSize + 'px';
+        canvas.style.width  = COLS * tileSize + 'px';
+        canvas.style.height = ROWS * tileSize + 'px';
+    } else {
+        const avail = Math.min(window.innerWidth * 0.92, 440);
+        const tileSize = Math.floor(avail / COLS);
+        canvas.width  = COLS * TILE;
+        canvas.height = ROWS * TILE;
+        wrap.style.width  = COLS * tileSize + 'px';
+        wrap.style.height = ROWS * tileSize + 'px';
+        canvas.style.width  = COLS * tileSize + 'px';
+        canvas.style.height = ROWS * tileSize + 'px';
 
-            // Spawn Sword
-            const sPos = getRandomEmptyTile();
-            sword = { x: sPos.x, y: sPos.y, collected: false };
-        }
+        // Move canvas wrap into portrait flow
+        const pw = document.getElementById('game-wrapper');
+        const controls = document.getElementById('controls-portrait');
+        pw.insertBefore(wrap, controls);
+    }
+}
 
-        function triggerGameOver(win) {
-            isGameOver = true;
-            if (win) {
-                endTitle.innerText = "Victory!";
-                endDesc.innerText = "You collected all trophies!";
-                overlay.classList.remove('death');
-            } else {
-                endTitle.innerText = "You Died!";
-                endDesc.innerText = "The glitch caught you.";
-                overlay.classList.add('death');
-            }
-            setTimeout(() => overlay.classList.add('show'), 300);
-        }
+// ─── ASSETS ───
+const images = {};
+const assetList = ['hero','enemy','grass','wall','trophy','sword'];
+let loadedCount = 0;
+let assetsReady = false;
 
-        // Enemy AI Logic (Moves 1 square towards player)
-        function moveEnemies() {
-            enemies.forEach((enemy, index) => {
-                let dx = player.x - enemy.x;
-                let dy = player.y - enemy.y;
-                let nextX = enemy.x;
-                let nextY = enemy.y;
-
-                // Move on the axis where the player is furthest
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    nextX += Math.sign(dx);
-                    // If wall or another enemy blocks, try Y axis
-                    if (map[nextY][nextX] === 1 || enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                        nextX = enemy.x;
-                        nextY += Math.sign(dy);
-                    }
-                } else {
-                    nextY += Math.sign(dy);
-                    // If wall or another enemy blocks, try X axis
-                    if (map[nextY][nextX] === 1 || enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                        nextY = enemy.y;
-                        nextX += Math.sign(dx);
-                    }
-                }
-
-                // Final check before committing move
-                if (map[nextY][nextX] !== 1 && !enemies.some((e, i) => i !== index && e.x === nextX && e.y === nextY)) {
-                    enemy.x = nextX;
-                    enemy.y = nextY;
-                }
-
-                // Did enemy catch player?
-                if (enemy.x === player.x && enemy.y === player.y) {
-                    if (player.hasSword) {
-                        enemy.dead = true; // Slayed by player
-                    } else {
-                        player.dead = true;
-                        triggerGameOver(false);
-                    }
-                }
-            });
-
-            // Remove dead enemies
-            enemies = enemies.filter(e => !e.dead);
-        }
-
-        function movePlayer(dir) {
-            if (isGameOver) return;
-            
-            let nextX = player.x;
-            let nextY = player.y;
-            if (dir === 'w') nextY--;
-            if (dir === 's') nextY++;
-            if (dir === 'a') nextX--;
-            if (dir === 'd') nextX++;
-
-            if (nextY >= 0 && nextY < GRID_SIZE && nextX >= 0 && nextX < GRID_SIZE) {
-                if (map[nextY][nextX] === 1) return; // Hit wall, invalid turn
-
-                player.x = nextX; 
-                player.y = nextY;
-
-                // Check interactions on the new tile
-                // 1. Trophies
-                let tIndex = trophies.findIndex(t => t.x === player.x && t.y === player.y);
-                if (tIndex > -1) {
-                    trophies.splice(tIndex, 1);
-                    score++;
-                    scoreEl.innerText = score;
-                    if (score >= NUM_TROPHIES) return triggerGameOver(true);
-                }
-
-                // 2. Sword
-                if (!sword.collected && player.x === sword.x && player.y === sword.y) {
-                    sword.collected = true;
-                    player.hasSword = true;
-                    modeEl.innerText = "Slayer Mode!";
-                    modeEl.style.color = "var(--accent)";
-                }
-
-                // 3. Enemies (Did player step ON an enemy?)
-                let eIndex = enemies.findIndex(e => e.x === player.x && e.y === player.y);
-                if (eIndex > -1) {
-                    if (player.hasSword) {
-                        enemies.splice(eIndex, 1); // Kill it
-                    } else {
-                        player.dead = true;
-                        return triggerGameOver(false);
-                    }
-                }
-
-                // If turn is valid and player is alive, enemies take their turn
-                moveEnemies();
-            }
-        }
-
-        const dirs = ['w', 'a', 's', 'd'];
-        dirs.forEach(key => {
-            const btn = document.getElementById(`ctrl-${key}`);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(key); });
-            btn.addEventListener('mousedown', (e) => { e.preventDefault(); movePlayer(key); });
-        });
-        
-        // Keyboard support for testing
-        window.addEventListener('keydown', e => {
-            const keys = { w: 'w', ArrowUp: 'w', s: 's', ArrowDown: 's', a: 'a', ArrowLeft: 'a', d: 'd', ArrowRight: 'd' };
-            if (keys[e.key]) movePlayer(keys[e.key]);
-        });
-
-        document.getElementById('btn-restart').addEventListener('click', initGame);
-        document.getElementById('btn-restart').addEventListener('touchstart', (e) => { e.preventDefault(); initGame(); });
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 1. Draw Map Base
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    ctx.drawImage(images.grass, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    if (map[y][x] === 1) ctx.drawImage(images.wall, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-            }
-
-            // 2. Draw Entities
-            if (!sword.collected) ctx.drawImage(images.sword, sword.x * TILE_SIZE, sword.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            trophies.forEach(t => ctx.drawImage(images.trophy, t.x * TILE_SIZE, t.y * TILE_SIZE, TILE_SIZE, TILE_SIZE));
-            enemies.forEach(e => ctx.drawImage(images.enemy, e.x * TILE_SIZE, e.y * TILE_SIZE, TILE_SIZE, TILE_SIZE));
-            
-            // 3. Draw Player (if alive)
-            if (!player.dead) ctx.drawImage(images.hero, player.x * TILE_SIZE, player.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            
+assetList.forEach(name => {
+    const img = new Image();
+    img.src = `${name}.png`;
+    img.onload = () => {
+        if (++loadedCount === assetList.length) {
+            assetsReady = true;
+            sizeCanvas();
+            initGame();
             requestAnimationFrame(gameLoop);
         }
-    </script>
+    };
+    img.onerror = () => {
+        // Fallback: draw colored rect if asset missing
+        loadedCount++;
+        if (loadedCount === assetList.length) {
+            assetsReady = true;
+            sizeCanvas();
+            initGame();
+            requestAnimationFrame(gameLoop);
+        }
+    };
+    images[name] = img;
+});
+
+// ─── GAME STATE ───
+let player, sword, trophies, enemies, score, isGameOver;
+
+function getRandomEmptyTile() {
+    let x, y, tries = 0;
+    while (tries++ < 1000) {
+        x = 1 + Math.floor(Math.random() * (COLS - 2));
+        y = 1 + Math.floor(Math.random() * (ROWS - 2));
+        if (map[y][x] !== 0) continue;
+        if (x === player.x && y === player.y) continue;
+        const occupied =
+            trophies.some(t => t.x === x && t.y === y) ||
+            enemies.some(e => e.x === x && e.y === y)  ||
+            (!sword.collected && sword.x === x && sword.y === y);
+        if (!occupied) return { x, y };
+    }
+    return { x: 1, y: 1 };
+}
+
+function initGame() {
+    sizeCanvas();
+    player = { x: 1, y: 1, hasSword: false, dead: false };
+    sword  = { x: 0, y: 0, collected: false };
+    trophies = []; enemies = [];
+    score = 0; isGameOver = false;
+
+    overlay.classList.remove('show', 'death');
+    modeEl.textContent = 'Run!';
+    modeEl.classList.remove('slayer');
+    scoreEl.textContent = 0;
+    totalEl.textContent = NUM_TROPHIES;
+
+    for (let i = 0; i < NUM_TROPHIES; i++) trophies.push(getRandomEmptyTile());
+    for (let i = 0; i < NUM_ENEMIES;  i++) enemies.push(getRandomEmptyTile());
+
+    const sp = getRandomEmptyTile();
+    sword = { x: sp.x, y: sp.y, collected: false };
+}
+
+// ─── GAME OVER ───
+function triggerGameOver(win) {
+    isGameOver = true;
+    if (win) {
+        endIcon.textContent  = '🏆';
+        endTitle.textContent = 'Victory!';
+        endDesc.textContent  = 'All trophies collected. You legend.';
+        overlay.classList.remove('death');
+    } else {
+        endIcon.textContent  = '💀';
+        endTitle.textContent = 'You Died!';
+        endDesc.textContent  = 'The glitch caught you.';
+        overlay.classList.add('death');
+    }
+    setTimeout(() => overlay.classList.add('show'), 300);
+}
+
+// ─── ENEMY AI ───
+function moveEnemies() {
+    enemies.forEach((enemy, idx) => {
+        let dx = player.x - enemy.x;
+        let dy = player.y - enemy.y;
+        let nx = enemy.x, ny = enemy.y;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            nx += Math.sign(dx);
+            if (map[ny][nx] === 1 || enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
+                nx = enemy.x;
+                ny += Math.sign(dy);
+            }
+        } else {
+            ny += Math.sign(dy);
+            if (map[ny][nx] === 1 || enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
+                ny = enemy.y;
+                nx += Math.sign(dx);
+            }
+        }
+
+        if (map[ny] && map[ny][nx] !== 1 && !enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
+            enemy.x = nx; enemy.y = ny;
+        }
+
+        if (enemy.x === player.x && enemy.y === player.y) {
+            if (player.hasSword) { enemy.dead = true; }
+            else { player.dead = true; triggerGameOver(false); }
+        }
+    });
+    enemies = enemies.filter(e => !e.dead);
+}
+
+// ─── PLAYER MOVE ───
+function movePlayer(dir) {
+    if (isGameOver) return;
+    let nx = player.x, ny = player.y;
+    if (dir === 'w') ny--;
+    if (dir === 's') ny++;
+    if (dir === 'a') nx--;
+    if (dir === 'd') nx++;
+
+    if (ny < 0 || ny >= ROWS || nx < 0 || nx >= COLS) return;
+    if (map[ny][nx] === 1) return;
+
+    player.x = nx; player.y = ny;
+
+    // Trophy
+    const ti = trophies.findIndex(t => t.x === nx && t.y === ny);
+    if (ti > -1) {
+        trophies.splice(ti, 1);
+        score++;
+        scoreEl.textContent = score;
+        if (score >= NUM_TROPHIES) return triggerGameOver(true);
+    }
+
+    // Sword
+    if (!sword.collected && nx === sword.x && ny === sword.y) {
+        sword.collected = true;
+        player.hasSword = true;
+        modeEl.textContent = 'Slayer!';
+        modeEl.classList.add('slayer');
+    }
+
+    // Enemy
+    const ei = enemies.findIndex(e => e.x === nx && e.y === ny);
+    if (ei > -1) {
+        if (player.hasSword) { enemies.splice(ei, 1); }
+        else { player.dead = true; return triggerGameOver(false); }
+    }
+
+    moveEnemies();
+}
+
+// ─── DRAW HELPERS (fallback colored tiles if assets missing) ───
+const FALLBACK = {
+    grass:  '#2d4a1e',
+    wall:   '#3a3a5c',
+    trophy: '#eab308',
+    sword:  '#60a5fa',
+    hero:   '#22c55e',
+    enemy:  '#ef4444',
+};
+
+function drawTile(name, x, y) {
+    const px = x * TILE, py = y * TILE;
+    if (images[name] && images[name].complete && images[name].naturalWidth > 0) {
+        ctx.drawImage(images[name], px, py, TILE, TILE);
+    } else {
+        ctx.fillStyle = FALLBACK[name] || '#888';
+        ctx.fillRect(px, py, TILE, TILE);
+    }
+}
+
+// ─── RENDER ───
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            drawTile('grass', x, y);
+            if (map[y][x] === 1) drawTile('wall', x, y);
+        }
+    }
+
+    if (!sword.collected) drawTile('sword', sword.x, sword.y);
+    trophies.forEach(t => drawTile('trophy', t.x, t.y));
+    enemies.forEach(e => drawTile('enemy', e.x, e.y));
+    if (!player.dead) drawTile('hero', player.x, player.y);
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ─── CONTROLS ───
+// Portrait buttons
+['w','a','s','d'].forEach(k => {
+    const btn = document.getElementById(`ctrl-${k}`);
+    btn.addEventListener('touchstart', e => { e.preventDefault(); movePlayer(k); });
+    btn.addEventListener('mousedown',  e => { e.preventDefault(); movePlayer(k); });
+});
+
+// Landscape buttons (same keys, different IDs)
+['w','a','s','d'].forEach(k => {
+    const btn = document.getElementById(`ctrl-${k}-ls`);
+    if (!btn) return;
+    btn.addEventListener('touchstart', e => { e.preventDefault(); movePlayer(k); });
+    btn.addEventListener('mousedown',  e => { e.preventDefault(); movePlayer(k); });
+});
+
+// Keyboard
+window.addEventListener('keydown', e => {
+    const map2 = { w:'w', ArrowUp:'w', s:'s', ArrowDown:'s', a:'a', ArrowLeft:'a', d:'d', ArrowRight:'d' };
+    if (map2[e.key]) { e.preventDefault(); movePlayer(map2[e.key]); }
+});
+
+// Restart
+document.getElementById('btn-restart').addEventListener('click', initGame);
+document.getElementById('btn-restart').addEventListener('touchstart', e => { e.preventDefault(); initGame(); });
+
+// Orientation change
+window.addEventListener('resize', () => {
+    if (!isGameOver) initGame();
+    else sizeCanvas();
+});
+</script>
 </body>
 </html>
