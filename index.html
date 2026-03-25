@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
+    <title>Pixel Quest</title>
+    
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --accent: #eab308; /* A nice premium gold */
+            --text: #ffffff;
+            --btn-active: #333333;
+        }
+
+        body { 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 0;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            height: 100vh;
+            color: var(--text); 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            overflow: hidden;
+            touch-action: none; /* Critical: prevents pull-to-refresh & swipe navigation */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90vw;
+            max-width: 400px;
+            margin-bottom: 15px;
+            background: var(--surface);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .stat-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .stat-group svg { width: 20px; height: 20px; fill: var(--accent); }
+        .mode-text { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+        .canvas-container {
+            width: 90vw;
+            height: 90vw;
+            max-width: 400px;
+            max-height: 400px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 2px solid #333;
+            background: #000;
+        }
+
+        canvas { 
+            width: 100%; 
+            height: 100%; 
+            image-rendering: pixelated; 
+            display: block;
+        }
+        
+        /* Premium SVG D-Pad */
+        .controls { 
+            display: grid; 
+            grid-template-columns: repeat(3, 65px); 
+            grid-template-rows: repeat(2, 65px); 
+            gap: 12px; 
+            margin-top: 30px; 
+        }
+
+        .btn {
+            background: var(--surface); 
+            border: 1px solid #333; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .btn svg { width: 30px; height: 30px; fill: white; }
+        .btn:active { background: var(--btn-active); transform: scale(0.92); }
+        
+        .up { grid-column: 2; }
+        .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+
+        /* Victory Overlay */
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        #overlay.show { opacity: 1; pointer-events: all; }
+        #overlay h1 { color: var(--accent); margin-bottom: 10px; font-size: 2.5rem;}
+        #btn-restart {
+            margin-top: 20px; padding: 12px 24px; font-size: 1.1rem;
+            background: var(--accent); color: #000; border: none;
+            border-radius: 8px; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="stat-group">
+            <svg viewBox="0 0 24 24"><path d="M20.2 2H19.5C19.5 2 19.5 2 19.5 2H4.5C4.5 2 4.5 2 4.5 2H3.8C2.2 2 1 3.2 1 4.8V6.5C1 9.8 3.5 12.5 6.8 12.8C7.6 14.6 9.4 16 11.5 16V19H8.5C7.7 19 7 19.7 7 20.5V22H17V20.5C17 19.7 16.3 19 15.5 19H12.5V16C14.6 16 16.4 14.6 17.2 12.8C20.5 12.5 23 9.8 23 6.5V4.8C23 3.2 21.8 2 20.2 2ZM5.5 10.9C4 10.3 3 8.8 3 7V5H5.5V10.9ZM21 7C21 8.8 20 10.3 18.5 10.9V5H21V7Z"/></svg>
+            <span id="score">0</span> / <span id="total">0</span>
+        </div>
+        <div class="mode-text" id="mode">Questing</div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="gameCanvas" width="320" height="320"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="btn up" id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left" id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down" id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn right" id="ctrl-d"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+    </div>
+
+    <div id="overlay">
+        <h1>Victory!</h1>
+        <p>You cleared the dungeon.</p>
+        <button id="btn-restart">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const totalEl = document.getElementById('total');
+        const modeEl = document.getElementById('mode');
+        const overlay = document.getElementById('overlay');
+
+        const TILE_SIZE = 32;
+        const GRID_SIZE = 10;
+        let score = 0;
+        let totalTrophies = 0;
+        let hasSword = false;
+        let isGameOver = false;
+
+        const images = {};
+        const assets = ['hero', 'enemy', 'grass', 'wall', 'trophy', 'sword'];
+        let loadedCount = 0;
+
+        // Original Map Template
+        const mapTemplate = [
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,4,1],
+            [1,0,1,1,0,1,1,1,0,1],
+            [1,0,1,2,0,0,3,1,0,1],
+            [1,0,0,0,1,1,0,0,0,1],
+            [1,1,1,0,0,0,0,1,1,1],
+            [1,0,3,0,1,1,0,2,0,1],
+            [1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        let map = [];
+        let player = { x: 1, y: 1 };
+
+        function initGame() {
+            // Deep copy the map template
+            map = mapTemplate.map(row => [...row]);
+            player = { x: 1, y: 1 };
+            score = 0;
+            hasSword = false;
+            isGameOver = false;
+            overlay.classList.remove('show');
+            modeEl.innerText = "Questing";
+            modeEl.style.color = "#aaa";
+            
+            // Count total trophies dynamically
+            totalTrophies = 0;
+            for(let y=0; y<GRID_SIZE; y++){
+                for(let x=0; x<GRID_SIZE; x++){
+                    if(map[y][x] === 2) totalTrophies++;
+                }
+            }
+            scoreEl.innerText = score;
+            totalEl.innerText = totalTrophies;
+        }
+
+        assets.forEach(name => {
+            const img = new Image();
+            img.src = `${name}.png`;
+            img.onload = () => { 
+                if (++loadedCount === assets.length) {
+                    initGame();
+                    requestAnimationFrame(gameLoop); 
+                }
+            };
+            images[name] = img;
+        });
+
+        function move(dir) {
+            if (isGameOver) return;
+            
+            let nextX = player.x;
+            let nextY = player.y;
+            if (dir === 'w') nextY--;
+            if (dir === 's') nextY++;
+            if (dir === 'a') nextX--;
+            if (dir === 'd') nextX++;
+
+            if (nextY >= 0 && nextY < GRID_SIZE && nextX >= 0 && nextX < GRID_SIZE) {
+                const tile = map[nextY][nextX];
+                if (tile !== 1) { // Not a wall
+                    if (tile === 2) { 
+                        score++; 
+                        scoreEl.innerText = score; 
+                        map[nextY][nextX] = 0; 
+                        checkWin();
+                    }
+                    if (tile === 4) { 
+                        hasSword = true; 
+                        modeEl.innerText = "Sword Equipped"; 
+                        modeEl.style.color = "var(--accent)";
+                        map[nextY][nextX] = 0; 
+                    }
+                    if (tile === 3) {
+                        if (hasSword) map[nextY][nextX] = 0; // Defeat enemy
+                        else return; // Blocked
+                    }
+                    player.x = nextX; player.y = nextY;
+                }
+            }
+        }
+
+        function checkWin() {
+            if (score >= totalTrophies) {
+                isGameOver = true;
+                setTimeout(() => overlay.classList.add('show'), 300);
+            }
+        }
+
+        // Touch Support for Buttons
+        const dirs = ['w', 'a', 's', 'd'];
+        dirs.forEach(key => {
+            const btn = document.getElementById(`ctrl-${key}`);
+            // Use touchstart for immediate response, preventDefault stops double-firing
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); move(key); });
+            // Keep mousedown for testing on desktop
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); move(key); });
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', initGame);
+        document.getElementById('btn-restart').addEventListener('touchstart', (e) => { e.preventDefault(); initGame(); });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    ctx.drawImage(images.grass, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    const type = map[y][x];
+                    if (type === 1) ctx.drawImage(images.wall, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (type === 2) ctx.drawImage(images.trophy, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (type === 3) ctx.drawImage(images.enemy, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (type === 4) ctx.drawImage(images.sword, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+            ctx.drawImage(images.hero, player.x * TILE_SIZE, player.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
