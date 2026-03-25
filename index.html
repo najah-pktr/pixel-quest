@@ -5,295 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#121212">
-  <link rel="icon" type="image/x-icon" href="/favicon.png">
-
+    <meta name="theme-color" content="#0f0f0f">
     <title>Pixel Quest Survival</title>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --surface2: #252525;
-            --accent: #eab308;
-            --danger: #ef4444;
-            --text: #ffffff;
-            --muted: #888;
-            --btn-active: #333;
-            --border: #2e2e2e;
+            --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#222;
+            --border:#2a2a2a; --accent:#eab308; --danger:#ef4444;
+            --green:#22c55e; --text:#fff; --muted:#555;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+            background:var(--bg); display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            min-height:100dvh; color:var(--text);
+            font-family:'Press Start 2P',monospace;
+            overflow:hidden; touch-action:none;
+            user-select:none; -webkit-user-select:none;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            background: var(--bg);
-            margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; color: var(--text);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            overflow: hidden; touch-action: none;
-            user-select: none; -webkit-user-select: none;
+        /* ── HUD ── */
+        #hud{
+            display:flex; align-items:center; justify-content:space-between;
+            width:min(92vw,460px); padding:8px 14px;
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:10px; margin-bottom:8px; gap:8px; flex-wrap:wrap;
         }
+        .hearts{display:flex;gap:4px;}
+        .heart{font-size:14px;transition:transform .15s;filter:drop-shadow(0 0 4px rgba(239,68,68,.5));}
+        .heart.empty{filter:none;opacity:.2;}
+        .heart.pulse{animation:hpulse .3s ease;}
+        @keyframes hpulse{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 
-        /* ─── PORTRAIT LAYOUT ─── */
-        #game-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0;
-            width: 100%;
-            height: 100%;
+        .trophy-count{font-size:9px;color:var(--accent);display:flex;align-items:center;gap:5px;}
+        .combo-badge{
+            font-size:7px; background:var(--accent); color:#000;
+            padding:3px 8px; border-radius:4px;
+            opacity:0; transition:opacity .2s; white-space:nowrap;
         }
-
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            width: min(92vw, 440px);
-            padding: 10px 18px;
-            background: var(--surface);
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            margin: 10px 0 8px;
+        .combo-badge.show{opacity:1;}
+        .mode-badge{
+            font-size:6px; padding:4px 8px; border-radius:4px;
+            border:1px solid var(--border); color:var(--muted);
+            white-space:nowrap; transition:all .3s;
         }
-
-        .stat-group {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 1.05rem; font-weight: 700;
-        }
-        .stat-group svg { width: 18px; height: 18px; fill: var(--accent); }
-
-        .mode-badge {
-            font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 1.2px; color: var(--muted);
-            background: var(--surface2); padding: 4px 10px;
-            border-radius: 20px; border: 1px solid var(--border);
-            transition: color 0.3s, border-color 0.3s;
-        }
-        .mode-badge.slayer {
-            color: var(--accent);
-            border-color: var(--accent);
-            text-shadow: 0 0 8px rgba(234,179,8,0.4);
+        .mode-badge.slayer{
+            color:var(--accent); border-color:var(--accent);
+            text-shadow:0 0 8px rgba(234,179,8,.6);
+            box-shadow:0 0 10px rgba(234,179,8,.15);
         }
 
-        .canvas-wrap {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid var(--border);
-            box-shadow: 0 8px 40px rgba(0,0,0,0.7);
-            background: #000;
-            /* Size set by JS */
+        /* ── CANVAS ── */
+        #canvas-wrap{
+            position:relative; border-radius:8px; overflow:hidden;
+            border:2px solid var(--border);
+            box-shadow:0 10px 40px rgba(0,0,0,.8); background:#000;
+        }
+        #canvas-wrap.shake{animation:shake .4s ease;}
+        @keyframes shake{
+            10%{transform:translate(-5px,-3px) rotate(-1deg)}
+            20%{transform:translate(5px,3px) rotate(1deg)}
+            30%{transform:translate(-4px,2px)}
+            40%{transform:translate(4px,-4px) rotate(1deg)}
+            50%{transform:translate(-3px,3px) rotate(-1deg)}
+            60%{transform:translate(3px,1px)}
+            70%{transform:translate(-2px,-2px) rotate(1deg)}
+            80%{transform:translate(2px,2px) rotate(-1deg)}
+            90%{transform:translate(-1px,1px)}
+            100%{transform:translate(0,0)}
+        }
+        canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
+
+        /* minimap inside canvas-wrap */
+        #minimap{
+            position:absolute; bottom:7px; right:7px;
+            border:1px solid rgba(255,255,255,.15);
+            border-radius:3px; background:rgba(0,0,0,.75);
+            image-rendering:pixelated; pointer-events:none;
+            opacity:.9;
         }
 
-        canvas {
-            display: block;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+        /* float texts */
+        .float-txt{
+            position:absolute; font-size:7px;
+            font-family:'Press Start 2P',monospace;
+            color:var(--accent); pointer-events:none;
+            animation:fup .9s ease forwards; z-index:20;
+            white-space:nowrap; text-shadow:0 0 6px rgba(234,179,8,.8);
         }
+        .float-txt.kill{color:var(--danger);text-shadow:0 0 6px rgba(239,68,68,.8);}
+        @keyframes fup{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-30px);opacity:0}}
 
-        /* portrait controls: cross pad below canvas */
-        #controls-portrait {
-            display: grid;
-            grid-template-columns: repeat(3, 62px);
-            grid-template-rows: repeat(2, 62px);
-            gap: 10px;
-            margin-top: 14px;
+        /* ── D-PAD ── */
+        #dpad-portrait{
+            display:grid;
+            grid-template-columns:repeat(3,60px);
+            grid-template-rows:repeat(2,60px);
+            gap:8px; margin-top:12px;
         }
+        .dpad-ls{
+            display:grid;
+            grid-template-columns:repeat(3,56px);
+            grid-template-rows:repeat(2,56px);
+            gap:8px;
+        }
+        .btn{
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05);
+            transition:transform .08s,background .1s; cursor:pointer;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .btn svg{width:26px;height:26px;fill:rgba(255,255,255,.8);}
+        .btn:active{background:#2a2a2a;transform:scale(.88);}
+        .up{grid-column:2;grid-row:1;} .left{grid-column:1;grid-row:2;}
+        .down{grid-column:2;grid-row:2;} .right{grid-column:3;grid-row:2;}
 
-        /* landscape controls: left pad + right pad flanking canvas */
-        #controls-landscape {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            gap: 10px;
-        }
-        #controls-landscape-right {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            gap: 10px;
-        }
-        /* landscape row */
-        #landscape-row {
-            display: none;
-            align-items: center;
-            gap: 16px;
-            width: 100%;
-            justify-content: center;
-        }
+        /* made by */
+        .made-by{margin-top:10px;font-size:6px;color:var(--muted);letter-spacing:1px;}
+        .made-by span{color:var(--accent);}
 
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 58px);
-            grid-template-rows: repeat(2, 58px);
-            gap: 8px;
+        /* ── OVERLAY ── */
+        #overlay{
+            position:fixed;inset:0;background:rgba(0,0,0,.92);
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            gap:10px;opacity:0;pointer-events:none;transition:opacity .4s;z-index:100;
         }
-
-        .btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            transition: transform 0.08s, background 0.1s;
-            cursor: pointer;
+        #overlay.show{opacity:1;pointer-events:all;}
+        .ov-icon{font-size:46px;}
+        #overlay h1{font-size:clamp(14px,4vw,22px);color:var(--accent);text-align:center;line-height:1.6;}
+        #overlay p{font-size:clamp(7px,2vw,9px);color:#888;text-align:center;line-height:2;}
+        .ov-stats{
+            font-size:8px;color:var(--accent);background:var(--surface);
+            border:1px solid var(--border);border-radius:8px;
+            padding:12px 20px;display:flex;flex-direction:column;gap:8px;min-width:200px;
         }
-        .btn svg { width: 28px; height: 28px; fill: white; }
-        .btn:active, .btn.pressed { background: var(--btn-active); transform: scale(0.9); }
-
-        .up    { grid-column: 2; grid-row: 1; }
-        .left  { grid-column: 1; grid-row: 2; }
-        .down  { grid-column: 2; grid-row: 2; }
-        .right { grid-column: 3; grid-row: 2; }
-
-        /* ─── MADE BY TAG ─── */
-        .made-by {
-            margin-top: 10px;
-            font-size: 0.7rem;
-            color: var(--muted);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            display: flex; align-items: center; gap: 5px;
-            opacity: 0.6;
+        .ov-stats div{display:flex;justify-content:space-between;gap:20px;}
+        .ov-stats span{color:#fff;}
+        #btn-restart{
+            font-family:'Press Start 2P',monospace;padding:12px 24px;font-size:9px;
+            background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;
+            box-shadow:0 4px 20px rgba(234,179,8,.3);transition:transform .1s;margin-top:4px;
         }
-        .made-by span { color: var(--accent); font-weight: 700; }
+        #btn-restart:active{transform:scale(.95);}
+        #overlay.death h1{color:var(--danger);}
+        #overlay.death #btn-restart{background:var(--danger);color:#fff;box-shadow:0 4px 20px rgba(239,68,68,.3);}
 
-        /* ─── OVERLAY ─── */
-        #overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.88);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 100;
-            gap: 6px;
-        }
-        #overlay.show { opacity: 1; pointer-events: all; }
+        /* ── LANDSCAPE ── */
+        #ls-row{display:none;align-items:center;justify-content:center;gap:20px;width:100%;}
 
-        .overlay-icon { font-size: 3.5rem; margin-bottom: 4px; }
-        #overlay h1 {
-            color: var(--accent); margin: 0;
-            font-size: 2.2rem; text-align: center;
-            letter-spacing: -0.5px;
-        }
-        #overlay p { color: #aaa; margin: 6px 0 18px; font-size: 1rem; text-align: center; }
-        #btn-restart {
-            padding: 12px 28px; font-size: 1rem;
-            background: var(--accent); color: #000;
-            border: none; border-radius: 10px; font-weight: 700;
-            cursor: pointer; transition: transform 0.1s;
-        }
-        #btn-restart:active { transform: scale(0.96); }
-        #overlay.death h1 { color: var(--danger); }
-        #overlay.death #btn-restart { background: var(--danger); color: white; }
-
-        /* ─── LANDSCAPE MEDIA ─── */
-        @media (orientation: landscape) {
-            body { justify-content: center; }
-
-            .header {
-                width: auto;
-                min-width: 320px;
-                position: absolute;
-                top: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 10;
-                margin: 0;
+        @media (orientation:landscape){
+            #hud{
+                position:fixed;top:8px;left:50%;transform:translateX(-50%);
+                z-index:50;width:auto;min-width:340px;flex-wrap:nowrap;
             }
-
-            #controls-portrait { display: none; }
-
-            #landscape-row { display: flex; }
-
-            #controls-landscape,
-            #controls-landscape-right { display: flex; }
-
-            .made-by {
-                position: absolute;
-                bottom: 8px;
-                right: 14px;
-                margin: 0;
-            }
+            #dpad-portrait{display:none;}
+            #ls-row{display:flex;}
+            .made-by{position:fixed;bottom:8px;right:14px;margin:0;}
         }
     </style>
 </head>
 <body>
 
-<div id="game-wrapper">
-
-    <!-- Header -->
-    <div class="header">
-        <div class="stat-group">
-            <svg viewBox="0 0 24 24"><path d="M20.2 2H19.5H4.5H3.8C2.2 2 1 3.2 1 4.8V6.5C1 9.8 3.5 12.5 6.8 12.8C7.6 14.6 9.4 16 11.5 16V19H8.5C7.7 19 7 19.7 7 20.5V22H17V20.5C17 19.7 16.3 19 15.5 19H12.5V16C14.6 16 16.4 14.6 17.2 12.8C20.5 12.5 23 9.8 23 6.5V4.8C23 3.2 21.8 2 20.2 2ZM5.5 10.9C4 10.3 3 8.8 3 7V5H5.5V10.9ZM21 7C21 8.8 20 10.3 18.5 10.9V5H21V7Z"/></svg>
-            <span id="score">0</span>&nbsp;/&nbsp;<span id="total">0</span>
-        </div>
-        <div class="mode-badge" id="mode">Run!</div>
+<div id="hud">
+    <div class="hearts">
+        <span class="heart" id="h1">❤️</span>
+        <span class="heart" id="h2">❤️</span>
+        <span class="heart" id="h3">❤️</span>
     </div>
-
-    <!-- PORTRAIT: just canvas + controls stacked -->
-    <!-- LANDSCAPE: canvas flanked by dpads -->
-
-    <div id="landscape-row">
-        <!-- Left dpad (landscape) -->
-        <div id="controls-landscape">
-            <div class="dpad">
-                <div class="btn up"    id="ctrl-w-ls"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-                <div class="btn left"  id="ctrl-a-ls"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-                <div class="btn down"  id="ctrl-s-ls"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
-                <div class="btn right" id="ctrl-d-ls"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
-            </div>
-        </div>
-
-        <!-- Canvas -->
-        <div class="canvas-wrap" id="canvas-wrap">
-            <canvas id="gameCanvas"></canvas>
-        </div>
-
-        <!-- Right side (landscape placeholder for balance) -->
-        <div id="controls-landscape-right">
-            <div style="width: calc(3*58px + 2*8px)"></div>
-        </div>
-    </div>
-
-    <!-- Portrait canvas (same element, just repositioned by JS) -->
-
-    <!-- Portrait controls -->
-    <div id="controls-portrait">
-        <div class="btn up"    id="ctrl-w"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-        <div class="btn left"  id="ctrl-a"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-        <div class="btn down"  id="ctrl-s"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
-        <div class="btn right" id="ctrl-d"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
-    </div>
-
-    <div class="made-by">made by <span>Najah</span> ✦</div>
+    <div class="trophy-count">🏆 <span id="score">0</span>/<span id="total">0</span></div>
+    <div class="combo-badge" id="combo-badge">x2 COMBO!</div>
+    <div class="mode-badge" id="mode">RUN!</div>
 </div>
 
-<!-- Overlay -->
+<!-- LANDSCAPE: dpad | canvas | spacer -->
+<div id="ls-row">
+    <div class="dpad-ls">
+        <div class="btn up"    id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left"  id="la"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down"  id="ls_"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn right" id="ld"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+    </div>
+    <div id="canvas-wrap">
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="minimap"></canvas>
+    </div>
+    <div id="ls-spacer"></div>
+</div>
+
+<!-- PORTRAIT: canvas injected here -->
+<div id="port-slot"></div>
+
+<div id="dpad-portrait">
+    <div class="btn up"    id="pw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+    <div class="btn left"  id="pa"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+    <div class="btn down"  id="ps"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+    <div class="btn right" id="pd"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+</div>
+
+<div class="made-by">MADE BY <span>NAJAH</span> ✦</div>
+
 <div id="overlay">
-    <div class="overlay-icon" id="end-icon">🏆</div>
-    <h1 id="end-title">Victory!</h1>
-    <p id="end-desc">You collected all trophies!</p>
-    <button id="btn-restart">Play Again</button>
+    <div class="ov-icon" id="ov-icon">🏆</div>
+    <h1 id="ov-title">VICTORY!</h1>
+    <p  id="ov-desc">ALL TROPHIES COLLECTED</p>
+    <div class="ov-stats">
+        <div><span>TROPHIES</span>     <span id="st-t">0</span></div>
+        <div><span>ENEMIES SLAIN</span><span id="st-k">0</span></div>
+        <div><span>BEST COMBO</span>   <span id="st-c">x1</span></div>
+    </div>
+    <button id="btn-restart">▶ PLAY AGAIN</button>
 </div>
 
 <script>
-const canvas  = document.getElementById('gameCanvas');
-const ctx     = canvas.getContext('2d');
-const wrap    = document.getElementById('canvas-wrap');
-const lsRow   = document.getElementById('landscape-row');
-const scoreEl = document.getElementById('score');
-const totalEl = document.getElementById('total');
-const modeEl  = document.getElementById('mode');
-const overlay = document.getElementById('overlay');
-const endTitle= document.getElementById('end-title');
-const endDesc = document.getElementById('end-desc');
-const endIcon = document.getElementById('end-icon');
+// ── refs ──
+const canvas   = document.getElementById('gameCanvas');
+const ctx      = canvas.getContext('2d');
+const minimap  = document.getElementById('minimap');
+const mctx     = minimap.getContext('2d');
+const wrap     = document.getElementById('canvas-wrap');
+const lsRow    = document.getElementById('ls-row');
+const portSlot = document.getElementById('port-slot');
+const lsSpacer = document.getElementById('ls-spacer');
+const scoreEl  = document.getElementById('score');
+const totalEl  = document.getElementById('total');
+const modeEl   = document.getElementById('mode');
+const overlay  = document.getElementById('overlay');
+const comboBadge = document.getElementById('combo-badge');
 
-const TILE = 16; // internal tile size (pixel art is 16x16)
+const TILE = 16;
 
-// ─── EXPANDED MAP (14 cols × 14 rows landscape, falls back to 10×10 portrait) ───
-const MAP_PORTRAIT = [
+// ── maps ──
+const MAP_P = [
     [1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,1],
     [1,0,1,1,0,1,1,1,0,1],
@@ -305,8 +248,7 @@ const MAP_PORTRAIT = [
     [1,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1]
 ];
-
-const MAP_LANDSCAPE = [
+const MAP_L = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
     [1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1],
@@ -324,291 +266,306 @@ const MAP_LANDSCAPE = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-let map, COLS, ROWS;
-let NUM_TROPHIES, NUM_ENEMIES;
-
-function isLandscape() {
-    return window.innerWidth > window.innerHeight;
+let map,COLS,ROWS,NUM_TROPHIES,NUM_ENEMIES;
+function isLS(){ return window.innerWidth>window.innerHeight; }
+function setupMap(){
+    if(isLS()){map=MAP_L.map(r=>[...r]);COLS=16;ROWS=15;NUM_TROPHIES=7;NUM_ENEMIES=4;}
+    else       {map=MAP_P.map(r=>[...r]);COLS=10;ROWS=10;NUM_TROPHIES=5;NUM_ENEMIES=3;}
 }
 
-function setupMap() {
-    if (isLandscape()) {
-        map = MAP_LANDSCAPE.map(r => [...r]);
-        COLS = map[0].length;
-        ROWS = map.length;
-        NUM_TROPHIES = 7;
-        NUM_ENEMIES  = 4;
-    } else {
-        map = MAP_PORTRAIT.map(r => [...r]);
-        COLS = map[0].length;
-        ROWS = map.length;
-        NUM_TROPHIES = 5;
-        NUM_ENEMIES  = 3;
-    }
+// ── floor variants ──
+let floorV=[];
+function buildFloor(){
+    floorV=[];
+    const variants=['grass','grass1','grass2'];
+    for(let y=0;y<ROWS;y++){floorV[y]=[];for(let x=0;x<COLS;x++)floorV[y][x]=variants[Math.floor(Math.random()*3)];}
 }
 
-// ─── CANVAS SIZING ───
-function sizeCanvas() {
+// ── sizing ──
+function sizeCanvas(){
     setupMap();
-    const ls = isLandscape();
+    let tileSize;
+    if(isLS()){const a=Math.min(window.innerHeight-100,window.innerWidth*.55);tileSize=Math.floor(a/ROWS);}
+    else      {tileSize=Math.floor(Math.min(window.innerWidth*.92,440)/COLS);}
+    const cw=COLS*tileSize, ch=ROWS*tileSize;
+    canvas.width=COLS*TILE; canvas.height=ROWS*TILE;
+    canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
+    wrap.style.width=cw+'px';   wrap.style.height=ch+'px';
 
-    if (ls) {
-        // Available height minus header (≈55px) and made-by (≈30px)
-        const avail = Math.min(window.innerHeight - 95, window.innerWidth * 0.55);
-        const tileSize = Math.floor(avail / ROWS);
-        canvas.width  = COLS * TILE;
-        canvas.height = ROWS * TILE;
-        wrap.style.width  = COLS * tileSize + 'px';
-        wrap.style.height = ROWS * tileSize + 'px';
-        canvas.style.width  = COLS * tileSize + 'px';
-        canvas.style.height = ROWS * tileSize + 'px';
+    const mm=4;
+    minimap.width=COLS*mm; minimap.height=ROWS*mm;
+    minimap.style.width=COLS*mm+'px'; minimap.style.height=ROWS*mm+'px';
+
+    if(!isLS()){
+        portSlot.appendChild(wrap);
+        lsSpacer.style.width='0';
     } else {
-        const avail = Math.min(window.innerWidth * 0.92, 440);
-        const tileSize = Math.floor(avail / COLS);
-        canvas.width  = COLS * TILE;
-        canvas.height = ROWS * TILE;
-        wrap.style.width  = COLS * tileSize + 'px';
-        wrap.style.height = ROWS * tileSize + 'px';
-        canvas.style.width  = COLS * tileSize + 'px';
-        canvas.style.height = ROWS * tileSize + 'px';
-
-        // Move canvas wrap into portrait flow
-        const pw = document.getElementById('game-wrapper');
-        const controls = document.getElementById('controls-portrait');
-        pw.insertBefore(wrap, controls);
+        // ensure wrap is inside ls-row (it's there in HTML already, just keep spacer matching)
+        const dpadW = 3*56+2*8;
+        lsSpacer.style.width = dpadW+'px';
     }
 }
 
-// ─── ASSETS ───
-const images = {};
-const assetList = ['hero','enemy','grass','wall','trophy','sword'];
-let loadedCount = 0;
-let assetsReady = false;
-
-assetList.forEach(name => {
-    const img = new Image();
-    img.src = `${name}.png`;
-    img.onload = () => {
-        if (++loadedCount === assetList.length) {
-            assetsReady = true;
-            sizeCanvas();
-            initGame();
-            requestAnimationFrame(gameLoop);
-        }
-    };
-    img.onerror = () => {
-        // Fallback: draw colored rect if asset missing
-        loadedCount++;
-        if (loadedCount === assetList.length) {
-            assetsReady = true;
-            sizeCanvas();
-            initGame();
-            requestAnimationFrame(gameLoop);
-        }
-    };
-    images[name] = img;
+// ── assets ──
+const imgs={};
+const assetList=['hero','swordhero','enemy','grass','grass1','grass2','wall','trophy','sword'];
+let loadedN=0;
+assetList.forEach(n=>{
+    const i=new Image(); i.src=n+'.png';
+    i.onload=i.onerror=()=>{if(++loadedN===assetList.length)boot();};
+    imgs[n]=i;
 });
+function boot(){sizeCanvas();buildFloor();initGame();requestAnimationFrame(loop);}
 
-// ─── GAME STATE ───
-let player, sword, trophies, enemies, score, isGameOver;
+// ── audio ──
+let ac;
+function ga(){if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();return ac;}
+function tone(f,t,d,v=.12,delay=0){
+    try{const a=ga(),o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);o.type=t;o.frequency.value=f;
+    g.gain.setValueAtTime(v,a.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(.001,a.currentTime+delay+d);
+    o.start(a.currentTime+delay);o.stop(a.currentTime+delay+d);}catch(e){}
+}
+const sfx={
+    step:   ()=>tone(180,'square',.04,.05),
+    trophy: ()=>{tone(523,'square',.08,.15);tone(659,'square',.08,.15,.08);tone(784,'square',.12,.15,.16);},
+    sword:  ()=>{tone(440,'sawtooth',.06,.2);tone(880,'square',.1,.2,.06);},
+    kill:   ()=>{tone(200,'sawtooth',.1,.2);tone(100,'sawtooth',.15,.2,.08);},
+    hurt:   ()=>{tone(120,'sawtooth',.2,.3);tone(80,'sawtooth',.2,.3,.1);},
+    win:    ()=>[523,659,784,1046].forEach((f,i)=>tone(f,'square',.15,.2,i*.12)),
+    death:  ()=>[400,300,200,100].forEach((f,i)=>tone(f,'sawtooth',.2,.25,i*.1)),
+};
 
-function getRandomEmptyTile() {
-    let x, y, tries = 0;
-    while (tries++ < 1000) {
-        x = 1 + Math.floor(Math.random() * (COLS - 2));
-        y = 1 + Math.floor(Math.random() * (ROWS - 2));
-        if (map[y][x] !== 0) continue;
-        if (x === player.x && y === player.y) continue;
-        const occupied =
-            trophies.some(t => t.x === x && t.y === y) ||
-            enemies.some(e => e.x === x && e.y === y)  ||
-            (!sword.collected && sword.x === x && sword.y === y);
-        if (!occupied) return { x, y };
+// ── state ──
+let player,sword,trophies,enemies,score,isGameOver;
+let hp,kills,bestCombo,comboCount,comboTimer;
+let highlights=[];
+
+function rnd(n){return Math.floor(Math.random()*n);}
+
+function emptyTile(){
+    let x,y,tries=0;
+    while(tries++<2000){
+        x=1+rnd(COLS-2);y=1+rnd(ROWS-2);
+        if(map[y][x]!==0)continue;
+        if(x===player.x&&y===player.y)continue;
+        const occ=trophies.some(t=>t.x===x&&t.y===y)||
+                  enemies.some(e=>e.x===x&&e.y===y)||
+                  (!sword.collected&&sword.x===x&&sword.y===y);
+        if(!occ)return{x,y};
     }
-    return { x: 1, y: 1 };
+    return{x:1,y:3};
 }
 
-function initGame() {
-    sizeCanvas();
-    player = { x: 1, y: 1, hasSword: false, dead: false };
-    sword  = { x: 0, y: 0, collected: false };
-    trophies = []; enemies = [];
-    score = 0; isGameOver = false;
+function addHL(x,y,color){highlights.push({x,y,color,alpha:.7,decay:.055});}
 
-    overlay.classList.remove('show', 'death');
-    modeEl.textContent = 'Run!';
-    modeEl.classList.remove('slayer');
-    scoreEl.textContent = 0;
-    totalEl.textContent = NUM_TROPHIES;
-
-    for (let i = 0; i < NUM_TROPHIES; i++) trophies.push(getRandomEmptyTile());
-    for (let i = 0; i < NUM_ENEMIES;  i++) enemies.push(getRandomEmptyTile());
-
-    const sp = getRandomEmptyTile();
-    sword = { x: sp.x, y: sp.y, collected: false };
+function px2screen(tx,ty){
+    const sx=parseInt(canvas.style.width)/canvas.width;
+    const sy=parseInt(canvas.style.height)/canvas.height;
+    return{x:tx*TILE*sx, y:ty*TILE*sy};
 }
 
-// ─── GAME OVER ───
-function triggerGameOver(win) {
-    isGameOver = true;
-    if (win) {
-        endIcon.textContent  = '🏆';
-        endTitle.textContent = 'Victory!';
-        endDesc.textContent  = 'All trophies collected. You legend.';
-        overlay.classList.remove('death');
+function spawnFloat(tx,ty,txt,kill=false){
+    const p=px2screen(tx,ty);
+    const el=document.createElement('div');
+    el.className='float-txt'+(kill?' kill':'');
+    el.textContent=txt; el.style.left=p.x+'px'; el.style.top=p.y+'px';
+    wrap.appendChild(el); setTimeout(()=>el.remove(),900);
+}
+
+function doCombo(){
+    comboCount++;clearTimeout(comboTimer);
+    comboTimer=setTimeout(()=>{comboCount=0;comboBadge.classList.remove('show');},2000);
+    if(comboCount>=2){
+        comboBadge.textContent=`x${comboCount} COMBO!`;
+        comboBadge.classList.add('show');
+        if(comboCount>bestCombo)bestCombo=comboCount;
+    }
+    return comboCount;
+}
+
+function updateHearts(){
+    for(let i=1;i<=3;i++){
+        const h=document.getElementById('h'+i);
+        if(!h)return;
+        if(i<=hp){h.classList.remove('empty');h.textContent='❤️';}
+        else     {h.classList.add('empty');   h.textContent='🖤';}
+    }
+}
+
+function shake(){
+    wrap.classList.remove('shake');
+    void wrap.offsetWidth;
+    wrap.classList.add('shake');
+    setTimeout(()=>wrap.classList.remove('shake'),450);
+}
+
+function loseHp(){
+    hp--;updateHearts();
+    const h=document.getElementById('h'+(hp+1));
+    if(h){h.classList.add('pulse');setTimeout(()=>h.classList.remove('pulse'),300);}
+    shake();sfx.hurt();
+    if(hp<=0){player.dead=true;triggerEnd(false);}
+}
+
+function initGame(){
+    sizeCanvas();buildFloor();
+    player={x:1,y:1,hasSword:false,dead:false};
+    sword={x:0,y:0,collected:false};
+    trophies=[];enemies=[];score=0;isGameOver=false;
+    hp=3;kills=0;bestCombo=1;comboCount=0;highlights=[];
+    clearTimeout(comboTimer);
+    comboBadge.classList.remove('show');
+    overlay.classList.remove('show','death');
+    modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
+    scoreEl.textContent=0;totalEl.textContent=NUM_TROPHIES;
+    updateHearts();
+    for(let i=0;i<NUM_TROPHIES;i++)trophies.push(emptyTile());
+    for(let i=0;i<NUM_ENEMIES;i++) enemies.push(emptyTile());
+    const sp=emptyTile();sword={x:sp.x,y:sp.y,collected:false};
+}
+
+function triggerEnd(win){
+    isGameOver=true;
+    document.getElementById('st-t').textContent=score;
+    document.getElementById('st-k').textContent=kills;
+    document.getElementById('st-c').textContent='x'+bestCombo;
+    if(win){
+        document.getElementById('ov-icon').textContent='🏆';
+        document.getElementById('ov-title').textContent='VICTORY!';
+        document.getElementById('ov-desc').textContent='ALL TROPHIES COLLECTED';
+        overlay.classList.remove('death');sfx.win();
     } else {
-        endIcon.textContent  = '💀';
-        endTitle.textContent = 'You Died!';
-        endDesc.textContent  = 'The glitch caught you.';
-        overlay.classList.add('death');
+        document.getElementById('ov-icon').textContent='💀';
+        document.getElementById('ov-title').textContent='YOU DIED!';
+        document.getElementById('ov-desc').textContent='THE GLITCH CAUGHT YOU.';
+        overlay.classList.add('death');sfx.death();
     }
-    setTimeout(() => overlay.classList.add('show'), 300);
+    setTimeout(()=>overlay.classList.add('show'),400);
 }
 
-// ─── ENEMY AI ───
-function moveEnemies() {
-    enemies.forEach((enemy, idx) => {
-        let dx = player.x - enemy.x;
-        let dy = player.y - enemy.y;
-        let nx = enemy.x, ny = enemy.y;
-
-        if (Math.abs(dx) >= Math.abs(dy)) {
-            nx += Math.sign(dx);
-            if (map[ny][nx] === 1 || enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
-                nx = enemy.x;
-                ny += Math.sign(dy);
-            }
+// ── enemy AI ──
+function moveEnemies(){
+    enemies.forEach((en,idx)=>{
+        let dx=player.x-en.x,dy=player.y-en.y,nx=en.x,ny=en.y;
+        if(Math.abs(dx)>=Math.abs(dy)){
+            nx+=Math.sign(dx);
+            if(map[ny][nx]===1||enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){nx=en.x;ny+=Math.sign(dy);}
         } else {
-            ny += Math.sign(dy);
-            if (map[ny][nx] === 1 || enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
-                ny = enemy.y;
-                nx += Math.sign(dx);
-            }
+            ny+=Math.sign(dy);
+            if(map[ny][nx]===1||enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){ny=en.y;nx+=Math.sign(dx);}
         }
-
-        if (map[ny] && map[ny][nx] !== 1 && !enemies.some((e,i) => i!==idx && e.x===nx && e.y===ny)) {
-            enemy.x = nx; enemy.y = ny;
-        }
-
-        if (enemy.x === player.x && enemy.y === player.y) {
-            if (player.hasSword) { enemy.dead = true; }
-            else { player.dead = true; triggerGameOver(false); }
+        if(map[ny]&&map[ny][nx]!==1&&!enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){en.x=nx;en.y=ny;}
+        if(en.x===player.x&&en.y===player.y){
+            if(player.hasSword){en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);addHL(en.x,en.y,'#ef4444');sfx.kill();doCombo();}
+            else loseHp();
         }
     });
-    enemies = enemies.filter(e => !e.dead);
+    enemies=enemies.filter(e=>!e.dead);
 }
 
-// ─── PLAYER MOVE ───
-function movePlayer(dir) {
-    if (isGameOver) return;
-    let nx = player.x, ny = player.y;
-    if (dir === 'w') ny--;
-    if (dir === 's') ny++;
-    if (dir === 'a') nx--;
-    if (dir === 'd') nx++;
+// ── player move ──
+function movePlayer(dir){
+    if(isGameOver)return;
+    let nx=player.x,ny=player.y;
+    if(dir==='w')ny--;if(dir==='s')ny++;
+    if(dir==='a')nx--;if(dir==='d')nx++;
+    if(ny<0||ny>=ROWS||nx<0||nx>=COLS||map[ny][nx]===1)return;
+    player.x=nx;player.y=ny;sfx.step();
 
-    if (ny < 0 || ny >= ROWS || nx < 0 || nx >= COLS) return;
-    if (map[ny][nx] === 1) return;
-
-    player.x = nx; player.y = ny;
-
-    // Trophy
-    const ti = trophies.findIndex(t => t.x === nx && t.y === ny);
-    if (ti > -1) {
-        trophies.splice(ti, 1);
-        score++;
-        scoreEl.textContent = score;
-        if (score >= NUM_TROPHIES) return triggerGameOver(true);
+    const ti=trophies.findIndex(t=>t.x===nx&&t.y===ny);
+    if(ti>-1){
+        trophies.splice(ti,1);score++;scoreEl.textContent=score;
+        addHL(nx,ny,'#eab308');
+        const m=doCombo();
+        spawnFloat(nx,ny,m>=2?'+'+m+' COMBO!':'+1');
+        sfx.trophy();
+        if(score>=NUM_TROPHIES)return triggerEnd(true);
     }
-
-    // Sword
-    if (!sword.collected && nx === sword.x && ny === sword.y) {
-        sword.collected = true;
-        player.hasSword = true;
-        modeEl.textContent = 'Slayer!';
-        modeEl.classList.add('slayer');
+    if(!sword.collected&&nx===sword.x&&ny===sword.y){
+        sword.collected=true;player.hasSword=true;
+        modeEl.textContent='SLAYER!';modeEl.classList.add('slayer');
+        addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'⚔ ARMED!');sfx.sword();
     }
-
-    // Enemy
-    const ei = enemies.findIndex(e => e.x === nx && e.y === ny);
-    if (ei > -1) {
-        if (player.hasSword) { enemies.splice(ei, 1); }
-        else { player.dead = true; return triggerGameOver(false); }
+    const ei=enemies.findIndex(e=>e.x===nx&&e.y===ny);
+    if(ei>-1){
+        if(player.hasSword){kills++;spawnFloat(nx,ny,'✦ SLAIN',true);addHL(nx,ny,'#ef4444');enemies.splice(ei,1);sfx.kill();doCombo();}
+        else{loseHp();if(player.dead)return;}
     }
-
     moveEnemies();
 }
 
-// ─── DRAW HELPERS (fallback colored tiles if assets missing) ───
-const FALLBACK = {
-    grass:  '#2d4a1e',
-    wall:   '#3a3a5c',
-    trophy: '#eab308',
-    sword:  '#60a5fa',
-    hero:   '#22c55e',
-    enemy:  '#ef4444',
-};
-
-function drawTile(name, x, y) {
-    const px = x * TILE, py = y * TILE;
-    if (images[name] && images[name].complete && images[name].naturalWidth > 0) {
-        ctx.drawImage(images[name], px, py, TILE, TILE);
-    } else {
-        ctx.fillStyle = FALLBACK[name] || '#888';
-        ctx.fillRect(px, py, TILE, TILE);
-    }
+// ── draw helpers ──
+const FB={grass:'#2d4a1e',grass1:'#2a4820',grass2:'#334f22',wall:'#1e1e30',trophy:'#eab308',sword:'#93c5fd',hero:'#22c55e',swordhero:'#16a34a',enemy:'#ef4444'};
+function drawT(name,x,y){
+    const px=x*TILE,py=y*TILE,img=imgs[name];
+    if(img&&img.complete&&img.naturalWidth>0)ctx.drawImage(img,px,py,TILE,TILE);
+    else{ctx.fillStyle=FB[name]||'#555';ctx.fillRect(px,py,TILE,TILE);}
 }
 
-// ─── RENDER ───
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let y = 0; y < ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-            drawTile('grass', x, y);
-            if (map[y][x] === 1) drawTile('wall', x, y);
-        }
+// ── minimap ──
+function drawMinimap(){
+    const mm=4;mctx.clearRect(0,0,minimap.width,minimap.height);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+        mctx.fillStyle=map[y][x]===1?'#18182a':'#2d4a1e';
+        mctx.fillRect(x*mm,y*mm,mm,mm);
     }
-
-    if (!sword.collected) drawTile('sword', sword.x, sword.y);
-    trophies.forEach(t => drawTile('trophy', t.x, t.y));
-    enemies.forEach(e => drawTile('enemy', e.x, e.y));
-    if (!player.dead) drawTile('hero', player.x, player.y);
-
-    requestAnimationFrame(gameLoop);
+    mctx.fillStyle='#eab308';trophies.forEach(t=>mctx.fillRect(t.x*mm+1,t.y*mm+1,mm-1,mm-1));
+    if(!sword.collected){mctx.fillStyle='#93c5fd';mctx.fillRect(sword.x*mm+1,sword.y*mm+1,mm-1,mm-1);}
+    mctx.fillStyle='#ef4444';enemies.forEach(e=>mctx.fillRect(e.x*mm+1,e.y*mm+1,mm-1,mm-1));
+    mctx.fillStyle='#22c55e';mctx.fillRect(player.x*mm,player.y*mm,mm,mm);
 }
 
-// ─── CONTROLS ───
-// Portrait buttons
-['w','a','s','d'].forEach(k => {
-    const btn = document.getElementById(`ctrl-${k}`);
-    btn.addEventListener('touchstart', e => { e.preventDefault(); movePlayer(k); });
-    btn.addEventListener('mousedown',  e => { e.preventDefault(); movePlayer(k); });
-});
+// ── main loop ──
+let t0=0;
+function loop(ts){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // floor
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+        drawT(floorV[y]&&floorV[y][x]||'grass',x,y);
+        if(map[y][x]===1)drawT('wall',x,y);
+    }
+    // highlights
+    highlights=highlights.filter(h=>{
+        h.alpha-=h.decay;
+        if(h.alpha<=0)return false;
+        ctx.save();ctx.globalAlpha=h.alpha;ctx.fillStyle=h.color;
+        ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);ctx.restore();
+        return true;
+    });
+    // sword bob
+    if(!sword.collected){
+        const bob=Math.round(Math.sin(ts/300));
+        ctx.save();ctx.translate(0,bob);drawT('sword',sword.x,sword.y);ctx.restore();
+    }
+    // trophy bob
+    trophies.forEach(t=>{
+        const bob=Math.round(Math.sin(ts/400+t.x*.5));
+        ctx.save();ctx.translate(0,bob);drawT('trophy',t.x,t.y);ctx.restore();
+    });
+    enemies.forEach(e=>drawT('enemy',e.x,e.y));
+    if(!player.dead)drawT(player.hasSword?'swordhero':'hero',player.x,player.y);
+    drawMinimap();
+    requestAnimationFrame(loop);
+}
 
-// Landscape buttons (same keys, different IDs)
-['w','a','s','d'].forEach(k => {
-    const btn = document.getElementById(`ctrl-${k}-ls`);
-    if (!btn) return;
-    btn.addEventListener('touchstart', e => { e.preventDefault(); movePlayer(k); });
-    btn.addEventListener('mousedown',  e => { e.preventDefault(); movePlayer(k); });
-});
+// ── input ──
+function bind(id,dir){
+    const el=document.getElementById(id);if(!el)return;
+    el.addEventListener('touchstart',e=>{e.preventDefault();movePlayer(dir);},{passive:false});
+    el.addEventListener('mousedown', e=>{e.preventDefault();movePlayer(dir);});
+}
+['w','a','s','d'].forEach(k=>bind('p'+k,k));
+bind('lw','w');bind('la','a');bind('ls_','s');bind('ld','d');
 
-// Keyboard
-window.addEventListener('keydown', e => {
-    const map2 = { w:'w', ArrowUp:'w', s:'s', ArrowDown:'s', a:'a', ArrowLeft:'a', d:'d', ArrowRight:'d' };
-    if (map2[e.key]) { e.preventDefault(); movePlayer(map2[e.key]); }
+window.addEventListener('keydown',e=>{
+    const m={w:'w',ArrowUp:'w',s:'s',ArrowDown:'s',a:'a',ArrowLeft:'a',d:'d',ArrowRight:'d'};
+    if(m[e.key]){e.preventDefault();movePlayer(m[e.key]);}
 });
-
-// Restart
-document.getElementById('btn-restart').addEventListener('click', initGame);
-document.getElementById('btn-restart').addEventListener('touchstart', e => { e.preventDefault(); initGame(); });
-
-// Orientation change
-window.addEventListener('resize', () => {
-    if (!isGameOver) initGame();
-    else sizeCanvas();
-});
+document.getElementById('btn-restart').addEventListener('click',initGame);
+document.getElementById('btn-restart').addEventListener('touchstart',e=>{e.preventDefault();initGame();});
+window.addEventListener('resize',()=>isGameOver?sizeCanvas():initGame());
 </script>
 </body>
 </html>
