@@ -31,12 +31,7 @@
             background:var(--surface); border:1px solid var(--border);
             border-radius:10px; margin-bottom:8px; gap:8px; flex-wrap:wrap;
         }
-        .hearts{display:flex;gap:4px;}
-        .heart{font-size:14px;transition:transform .15s;filter:drop-shadow(0 0 4px rgba(239,68,68,.5));}
-        .heart.empty{filter:none;opacity:.2;}
-        .heart.pulse{animation:hpulse .3s ease;}
-        @keyframes hpulse{0%{transform:scale(1.6)}100%{transform:scale(1)}}
-
+        
         .trophy-count{font-size:9px;color:var(--accent);display:flex;align-items:center;gap:5px;}
         .combo-badge{
             font-size:7px; background:var(--accent); color:#000;
@@ -157,7 +152,7 @@
         @media (orientation:landscape){
             #hud{
                 position:fixed;top:8px;left:50%;transform:translateX(-50%);
-                z-index:50;width:auto;min-width:340px;flex-wrap:nowrap;
+                z-index:50;width:auto;min-width:280px;flex-wrap:nowrap;
             }
             #dpad-portrait{display:none;}
             #ls-row{display:flex;}
@@ -168,17 +163,11 @@
 <body>
 
 <div id="hud">
-    <div class="hearts">
-        <span class="heart" id="h1">❤️</span>
-        <span class="heart" id="h2">❤️</span>
-        <span class="heart" id="h3">❤️</span>
-    </div>
     <div class="trophy-count">🏆 <span id="score">0</span>/<span id="total">0</span></div>
     <div class="combo-badge" id="combo-badge">x2 COMBO!</div>
     <div class="mode-badge" id="mode">RUN!</div>
 </div>
 
-<!-- LANDSCAPE: dpad | canvas | spacer -->
 <div id="ls-row">
     <div class="dpad-ls">
         <div class="btn up"    id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
@@ -193,7 +182,6 @@
     <div id="ls-spacer"></div>
 </div>
 
-<!-- PORTRAIT: canvas injected here -->
 <div id="port-slot"></div>
 
 <div id="dpad-portrait">
@@ -300,7 +288,6 @@ function sizeCanvas(){
         portSlot.appendChild(wrap);
         lsSpacer.style.width='0';
     } else {
-        // ensure wrap is inside ls-row (it's there in HTML already, just keep spacer matching)
         const dpadW = 3*56+2*8;
         lsSpacer.style.width = dpadW+'px';
     }
@@ -339,7 +326,7 @@ const sfx={
 
 // ── state ──
 let player,sword,trophies,enemies,score,isGameOver;
-let hp,kills,bestCombo,comboCount,comboTimer;
+let kills,bestCombo,comboCount,comboTimer;
 let highlights=[];
 
 function rnd(n){return Math.floor(Math.random()*n);}
@@ -385,15 +372,6 @@ function doCombo(){
     return comboCount;
 }
 
-function updateHearts(){
-    for(let i=1;i<=3;i++){
-        const h=document.getElementById('h'+i);
-        if(!h)return;
-        if(i<=hp){h.classList.remove('empty');h.textContent='❤️';}
-        else     {h.classList.add('empty');   h.textContent='🖤';}
-    }
-}
-
 function shake(){
     wrap.classList.remove('shake');
     void wrap.offsetWidth;
@@ -401,26 +379,18 @@ function shake(){
     setTimeout(()=>wrap.classList.remove('shake'),450);
 }
 
-function loseHp(){
-    hp--;updateHearts();
-    const h=document.getElementById('h'+(hp+1));
-    if(h){h.classList.add('pulse');setTimeout(()=>h.classList.remove('pulse'),300);}
-    shake();sfx.hurt();
-    if(hp<=0){player.dead=true;triggerEnd(false);}
-}
-
 function initGame(){
     sizeCanvas();buildFloor();
     player={x:1,y:1,hasSword:false,dead:false};
     sword={x:0,y:0,collected:false};
     trophies=[];enemies=[];score=0;isGameOver=false;
-    hp=3;kills=0;bestCombo=1;comboCount=0;highlights=[];
+    kills=0;bestCombo=1;comboCount=0;highlights=[];
     clearTimeout(comboTimer);
     comboBadge.classList.remove('show');
     overlay.classList.remove('show','death');
     modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
     scoreEl.textContent=0;totalEl.textContent=NUM_TROPHIES;
-    updateHearts();
+    
     for(let i=0;i<NUM_TROPHIES;i++)trophies.push(emptyTile());
     for(let i=0;i<NUM_ENEMIES;i++) enemies.push(emptyTile());
     const sp=emptyTile();sword={x:sp.x,y:sp.y,collected:false};
@@ -457,9 +427,17 @@ function moveEnemies(){
             if(map[ny][nx]===1||enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){ny=en.y;nx+=Math.sign(dx);}
         }
         if(map[ny]&&map[ny][nx]!==1&&!enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){en.x=nx;en.y=ny;}
+        
+        // Instant Death Collision Check
         if(en.x===player.x&&en.y===player.y){
-            if(player.hasSword){en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);addHL(en.x,en.y,'#ef4444');sfx.kill();doCombo();}
-            else loseHp();
+            if(player.hasSword){
+                en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);
+                addHL(en.x,en.y,'#ef4444');sfx.kill();doCombo();
+            } else { 
+                shake(); 
+                player.dead=true; 
+                triggerEnd(false); 
+            }
         }
     });
     enemies=enemies.filter(e=>!e.dead);
@@ -488,12 +466,24 @@ function movePlayer(dir){
         modeEl.textContent='SLAYER!';modeEl.classList.add('slayer');
         addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'⚔ ARMED!');sfx.sword();
     }
+    
+    // Instant Death Collision Check
     const ei=enemies.findIndex(e=>e.x===nx&&e.y===ny);
     if(ei>-1){
-        if(player.hasSword){kills++;spawnFloat(nx,ny,'✦ SLAIN',true);addHL(nx,ny,'#ef4444');enemies.splice(ei,1);sfx.kill();doCombo();}
-        else{loseHp();if(player.dead)return;}
+        if(player.hasSword){
+            kills++;spawnFloat(nx,ny,'✦ SLAIN',true);
+            addHL(nx,ny,'#ef4444');enemies.splice(ei,1);sfx.kill();doCombo();
+        } else {
+            shake(); 
+            player.dead=true; 
+            triggerEnd(false); 
+            return;
+        }
     }
-    moveEnemies();
+    
+    if(!player.dead) {
+        moveEnemies();
+    }
 }
 
 // ── draw helpers ──
