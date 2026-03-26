@@ -233,11 +233,12 @@
 <div id="screen-credits" class="ui-screen">
     <h1 class="game-title" style="font-size: 16px;">CREDITS</h1>
     <div class="panel" style="text-align:center; line-height: 1.8;">
-        <span style="font-size: 8px; color:#888;">DESIGN & DEVELOPMENT</span>
+        <span style="font-size: 8px; color:#888;">DESIGN, DEVELOPMENT, MUSIC, ART & DIRECTION</span>
         <span style="font-size: 10px; color:var(--text);">Mohamed Najah P</span>
         <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-            <a href="https://github.com/najahisacoolguy" target="_blank" class="credits-link">GITHUB: najahisacoolguy</a>
-            <a href="https://behance.net" target="_blank" class="credits-link">BEHANCE PORTFOLIO</a>
+            <a href="https://github.com/najah-pktr" target="_blank" class="credits-link">Github</a>
+            <a href="https://mohamednajah.netlify.app" target="_blank" class="credits-link">Dev Portfolio</a>
+            <a href="https://instagram.com/@najah_pktr" target="_blank" class="credits-link">Instagram</a>
         </div>
     </div>
     <button class="menu-btn" onclick="navScreen('screen-menu')">BACK</button>
@@ -258,6 +259,11 @@
     <button class="menu-btn" onclick="navScreen('screen-menu')">MAIN MENU</button>
 </div>
 
+<script>
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
 <script>
 // ── Settings & Storage ──
 let prefs = { sound: true, haptics: true, bestScore: 0 };
