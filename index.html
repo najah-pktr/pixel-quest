@@ -26,10 +26,12 @@
 
         /* ── HUD ── */
         #hud{
-            display:flex; align-items:center; justify-content:space-between;
+            display:none; /* Hidden in menus */
+            align-items:center; justify-content:space-between;
             width:min(92vw,460px); padding:8px 14px;
             background:var(--surface); border:1px solid var(--border);
             border-radius:10px; margin-bottom:8px; gap:8px; flex-wrap:wrap;
+            z-index: 10;
         }
         
         .trophy-count{font-size:9px;color:var(--accent);display:flex;align-items:center;gap:5px;}
@@ -71,16 +73,14 @@
         }
         canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
 
-        /* minimap inside canvas-wrap */
         #minimap{
             position:absolute; bottom:7px; right:7px;
             border:1px solid rgba(255,255,255,.15);
             border-radius:3px; background:rgba(0,0,0,.75);
             image-rendering:pixelated; pointer-events:none;
-            opacity:.9;
+            opacity:.9; display: none;
         }
 
-        /* float texts */
         .float-txt{
             position:absolute; font-size:7px;
             font-family:'Press Start 2P',monospace;
@@ -91,18 +91,15 @@
         .float-txt.kill{color:var(--danger);text-shadow:0 0 6px rgba(239,68,68,.8);}
         @keyframes fup{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-30px);opacity:0}}
 
-        /* ── D-PAD ── */
+        /* ── CONTROLS ── */
+        #controls-wrapper { display: none; width: 100%; justify-content: center; }
         #dpad-portrait{
-            display:grid;
-            grid-template-columns:repeat(3,60px);
-            grid-template-rows:repeat(2,60px);
-            gap:8px; margin-top:12px;
+            display:grid; grid-template-columns:repeat(3,60px);
+            grid-template-rows:repeat(2,60px); gap:8px; margin-top:12px;
         }
         .dpad-ls{
-            display:grid;
-            grid-template-columns:repeat(3,56px);
-            grid-template-rows:repeat(2,56px);
-            gap:8px;
+            display:grid; grid-template-columns:repeat(3,56px);
+            grid-template-rows:repeat(2,56px); gap:8px;
         }
         .btn{
             background:var(--surface); border:1px solid var(--border);
@@ -116,47 +113,60 @@
         .up{grid-column:2;grid-row:1;} .left{grid-column:1;grid-row:2;}
         .down{grid-column:2;grid-row:2;} .right{grid-column:3;grid-row:2;}
 
-        /* made by */
-        .made-by{margin-top:10px;font-size:6px;color:var(--muted);letter-spacing:1px;}
+        .made-by{position: fixed; bottom: 10px; font-size:6px; color:var(--muted); letter-spacing:1px; z-index: 5;}
         .made-by span{color:var(--accent);}
 
-        /* ── OVERLAY ── */
-        #overlay{
-            position:fixed;inset:0;background:rgba(0,0,0,.92);
+        /* ── MENUS & OVERLAYS ── */
+        .ui-screen {
+            position:fixed;inset:0;background:rgba(15,15,15,.95); /* Uses --bg base */
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            gap:10px;opacity:0;pointer-events:none;transition:opacity .4s;z-index:100;
+            gap:15px; opacity:0; pointer-events:none; transition:opacity .3s; z-index:100;
         }
-        #overlay.show{opacity:1;pointer-events:all;}
-        .ov-icon{font-size:46px;}
-        #overlay h1{font-size:clamp(14px,4vw,22px);color:var(--accent);text-align:center;line-height:1.6;}
-        #overlay p{font-size:clamp(7px,2vw,9px);color:#888;text-align:center;line-height:2;}
-        .ov-stats{
-            font-size:8px;color:var(--accent);background:var(--surface);
-            border:1px solid var(--border);border-radius:8px;
-            padding:12px 20px;display:flex;flex-direction:column;gap:8px;min-width:200px;
+        .ui-screen.show { opacity:1; pointer-events:all; }
+        
+        .game-title { font-size:clamp(16px, 5vw, 28px); color:var(--accent); text-align:center; line-height:1.4; text-shadow: 4px 4px 0px var(--surface2); margin-bottom: 20px;}
+        
+        .menu-btn {
+            font-family:'Press Start 2P',monospace; padding:14px 24px; font-size:9px;
+            background:var(--surface); color:var(--text); border:2px solid var(--border);
+            border-radius:8px; cursor:pointer; transition:all .1s; width: 220px; text-align: center;
         }
-        .ov-stats div{display:flex;justify-content:space-between;gap:20px;}
-        .ov-stats span{color:#fff;}
-        #btn-restart{
-            font-family:'Press Start 2P',monospace;padding:12px 24px;font-size:9px;
-            background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;
-            box-shadow:0 4px 20px rgba(234,179,8,.3);transition:transform .1s;margin-top:4px;
+        .menu-btn:active { transform:scale(.95); }
+        .menu-btn.primary { background:var(--accent); color:#000; border-color:var(--accent); box-shadow:0 4px 20px rgba(234,179,8,.2); }
+        
+        .panel {
+            background:var(--surface); border:2px solid var(--border); border-radius:12px;
+            padding: 20px; width: 280px; display: flex; flex-direction: column; gap: 15px;
         }
-        #btn-restart:active{transform:scale(.95);}
-        #overlay.death h1{color:var(--danger);}
-        #overlay.death #btn-restart{background:var(--danger);color:#fff;box-shadow:0 4px 20px rgba(239,68,68,.3);}
+        .panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 8px; }
+        .toggle-btn { padding: 8px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 8px; }
+        .toggle-btn.active { color: var(--accent); border-color: var(--accent); }
+
+        .credits-link { color: var(--accent); text-decoration: none; font-size: 7px; }
+        .credits-link:hover { text-decoration: underline; }
+
+        /* Game Over Specific */
+        .ov-stats{ font-size:8px; color:var(--accent); display:flex; flex-direction:column; gap:8px; width: 100%;}
+        .ov-stats div{ display:flex; justify-content:space-between; gap:20px; }
+        .ov-stats span{ color:#fff; }
+        #screen-gameover.death .game-title { color:var(--danger); text-shadow: 4px 4px 0px #4a0000; }
+        #screen-gameover.death .menu-btn.primary { background:var(--danger); color:#fff; border-color:var(--danger); box-shadow:0 4px 20px rgba(239,68,68,.3); }
 
         /* ── LANDSCAPE ── */
         #ls-row{display:none;align-items:center;justify-content:center;gap:20px;width:100%;}
 
         @media (orientation:landscape){
-            #hud{
+            #hud.show-hud {
                 position:fixed;top:8px;left:50%;transform:translateX(-50%);
-                z-index:50;width:auto;min-width:280px;flex-wrap:nowrap;
+                z-index:50;width:auto;min-width:280px; flex-wrap:nowrap; display: flex;
             }
-            #dpad-portrait{display:none;}
-            #ls-row{display:flex;}
+            #controls-wrapper{display:none !important;}
+            #ls-row.show-ls {display:flex;}
             .made-by{position:fixed;bottom:8px;right:14px;margin:0;}
+        }
+        @media (orientation:portrait){
+            #hud.show-hud { display: flex; }
+            #controls-wrapper.show-controls { display: flex; }
         }
     </style>
 </head>
@@ -170,9 +180,9 @@
 
 <div id="ls-row">
     <div class="dpad-ls">
-        <div class="btn up"    id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-        <div class="btn left"  id="la"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-        <div class="btn down"  id="ls_"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn up" id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left" id="la"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down" id="ls_"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
         <div class="btn right" id="ld"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
     </div>
     <div id="canvas-wrap">
@@ -184,28 +194,98 @@
 
 <div id="port-slot"></div>
 
-<div id="dpad-portrait">
-    <div class="btn up"    id="pw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-    <div class="btn left"  id="pa"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-    <div class="btn down"  id="ps"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
-    <div class="btn right" id="pd"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+<div id="controls-wrapper">
+    <div id="dpad-portrait">
+        <div class="btn up" id="pw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left" id="pa"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down" id="ps"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn right" id="pd"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
+    </div>
 </div>
 
-<div class="made-by">MADE BY <span>NAJAH</span> ✦</div>
+<div class="made-by">v1.0.0 ✦ MADE BY <span>NAJAH</span></div>
 
-<div id="overlay">
-    <div class="ov-icon" id="ov-icon">🏆</div>
-    <h1 id="ov-title">VICTORY!</h1>
-    <p  id="ov-desc">ALL TROPHIES COLLECTED</p>
-    <div class="ov-stats">
-        <div><span>TROPHIES</span>     <span id="st-t">0</span></div>
-        <div><span>ENEMIES SLAIN</span><span id="st-k">0</span></div>
-        <div><span>BEST COMBO</span>   <span id="st-c">x1</span></div>
+<div id="screen-menu" class="ui-screen show">
+    <div class="game-title">PIXEL QUEST<br>SURVIVAL</div>
+    <button class="menu-btn primary" onclick="startGame()">START GAME</button>
+    <button class="menu-btn" onclick="navScreen('screen-settings')">SETTINGS</button>
+    <button class="menu-btn" onclick="navScreen('screen-credits')">CREDITS</button>
+</div>
+
+<div id="screen-settings" class="ui-screen">
+    <h1 class="game-title" style="font-size: 16px;">SETTINGS</h1>
+    <div class="panel">
+        <div class="panel-row">
+            <span>SOUND FX</span>
+            <button class="toggle-btn" id="btn-snd" onclick="toggleSetting('sound')">ON</button>
+        </div>
+        <div class="panel-row">
+            <span>HAPTICS</span>
+            <button class="toggle-btn" id="btn-vib" onclick="toggleSetting('haptics')">ON</button>
+        </div>
+        <div class="panel-row" style="color:var(--accent); justify-content:center; margin-top:10px;">
+            <span>BEST SCORE: <span id="stat-best-score">0</span></span>
+        </div>
     </div>
-    <button id="btn-restart">▶ PLAY AGAIN</button>
+    <button class="menu-btn" onclick="navScreen('screen-menu')">BACK</button>
+</div>
+
+<div id="screen-credits" class="ui-screen">
+    <h1 class="game-title" style="font-size: 16px;">CREDITS</h1>
+    <div class="panel" style="text-align:center; line-height: 1.8;">
+        <span style="font-size: 8px; color:#888;">DESIGN & DEVELOPMENT</span>
+        <span style="font-size: 10px; color:var(--text);">Mohamed Najah P</span>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <a href="https://github.com/najahisacoolguy" target="_blank" class="credits-link">GITHUB: najahisacoolguy</a>
+            <a href="https://behance.net" target="_blank" class="credits-link">BEHANCE PORTFOLIO</a>
+        </div>
+    </div>
+    <button class="menu-btn" onclick="navScreen('screen-menu')">BACK</button>
+</div>
+
+<div id="screen-gameover" class="ui-screen">
+    <div style="font-size:46px; margin-bottom:-10px;" id="ov-icon">🏆</div>
+    <h1 class="game-title" id="ov-title">VICTORY!</h1>
+    <p id="ov-desc" style="font-size:8px; color:#888; margin-bottom:10px;">ALL TROPHIES COLLECTED</p>
+    <div class="panel">
+        <div class="ov-stats">
+            <div><span>TROPHIES</span> <span id="st-t">0</span></div>
+            <div><span>ENEMIES SLAIN</span><span id="st-k">0</span></div>
+            <div><span>BEST COMBO</span> <span id="st-c">x1</span></div>
+        </div>
+    </div>
+    <button class="menu-btn primary" onclick="startGame()">PLAY AGAIN</button>
+    <button class="menu-btn" onclick="navScreen('screen-menu')">MAIN MENU</button>
 </div>
 
 <script>
+// ── Settings & Storage ──
+let prefs = { sound: true, haptics: true, bestScore: 0 };
+try {
+    const saved = JSON.parse(localStorage.getItem('pixelQuestPrefs'));
+    if(saved) prefs = { ...prefs, ...saved };
+} catch(e) {}
+
+function savePrefs() { localStorage.setItem('pixelQuestPrefs', JSON.stringify(prefs)); }
+function updateSettingUI() {
+    document.getElementById('btn-snd').textContent = prefs.sound ? 'ON' : 'OFF';
+    document.getElementById('btn-snd').className = prefs.sound ? 'toggle-btn active' : 'toggle-btn';
+    document.getElementById('btn-vib').textContent = prefs.haptics ? 'ON' : 'OFF';
+    document.getElementById('btn-vib').className = prefs.haptics ? 'toggle-btn active' : 'toggle-btn';
+    document.getElementById('stat-best-score').textContent = prefs.bestScore;
+}
+function toggleSetting(key) { prefs[key] = !prefs[key]; savePrefs(); updateSettingUI(); }
+function vibe() { if(prefs.haptics && navigator.vibrate) navigator.vibrate(40); }
+
+// ── UI Navigation ──
+let gameState = 'MENU'; // MENU, PLAY, DEAD
+const screens = ['screen-menu', 'screen-settings', 'screen-credits', 'screen-gameover'];
+function navScreen(id) {
+    screens.forEach(s => document.getElementById(s).classList.remove('show'));
+    if(id) document.getElementById(id).classList.add('show');
+    if(id === 'screen-settings') updateSettingUI();
+}
+
 // ── refs ──
 const canvas   = document.getElementById('gameCanvas');
 const ctx      = canvas.getContext('2d');
@@ -215,10 +295,11 @@ const wrap     = document.getElementById('canvas-wrap');
 const lsRow    = document.getElementById('ls-row');
 const portSlot = document.getElementById('port-slot');
 const lsSpacer = document.getElementById('ls-spacer');
+const hud      = document.getElementById('hud');
+const ctrlWrap = document.getElementById('controls-wrapper');
 const scoreEl  = document.getElementById('score');
 const totalEl  = document.getElementById('total');
 const modeEl   = document.getElementById('mode');
-const overlay  = document.getElementById('overlay');
 const comboBadge = document.getElementById('combo-badge');
 
 const TILE = 16;
@@ -302,12 +383,13 @@ assetList.forEach(n=>{
     i.onload=i.onerror=()=>{if(++loadedN===assetList.length)boot();};
     imgs[n]=i;
 });
-function boot(){sizeCanvas();buildFloor();initGame();requestAnimationFrame(loop);}
+function boot(){sizeCanvas();buildFloor();resetGameData();requestAnimationFrame(loop);}
 
 // ── audio ──
 let ac;
 function ga(){if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();return ac;}
 function tone(f,t,d,v=.12,delay=0){
+    if(!prefs.sound) return;
     try{const a=ga(),o=a.createOscillator(),g=a.createGain();
     o.connect(g);g.connect(a.destination);o.type=t;o.frequency.value=f;
     g.gain.setValueAtTime(v,a.currentTime+delay);
@@ -325,7 +407,7 @@ const sfx={
 };
 
 // ── state ──
-let player,sword,trophies,enemies,score,isGameOver;
+let player,sword,trophies,enemies,score;
 let kills,bestCombo,comboCount,comboTimer;
 let highlights=[];
 
@@ -336,10 +418,10 @@ function emptyTile(){
     while(tries++<2000){
         x=1+rnd(COLS-2);y=1+rnd(ROWS-2);
         if(map[y][x]!==0)continue;
-        if(x===player.x&&y===player.y)continue;
+        if(player && x===player.x&&y===player.y)continue;
         const occ=trophies.some(t=>t.x===x&&t.y===y)||
                   enemies.some(e=>e.x===x&&e.y===y)||
-                  (!sword.collected&&sword.x===x&&sword.y===y);
+                  (sword && !sword.collected&&sword.x===x&&sword.y===y);
         if(!occ)return{x,y};
     }
     return{x:1,y:3};
@@ -373,46 +455,65 @@ function doCombo(){
 }
 
 function shake(){
+    vibe();
     wrap.classList.remove('shake');
     void wrap.offsetWidth;
     wrap.classList.add('shake');
     setTimeout(()=>wrap.classList.remove('shake'),450);
 }
 
-function initGame(){
-    sizeCanvas();buildFloor();
+function resetGameData() {
     player={x:1,y:1,hasSword:false,dead:false};
     sword={x:0,y:0,collected:false};
-    trophies=[];enemies=[];score=0;isGameOver=false;
+    trophies=[];enemies=[];score=0;
     kills=0;bestCombo=1;comboCount=0;highlights=[];
-    clearTimeout(comboTimer);
-    comboBadge.classList.remove('show');
-    overlay.classList.remove('show','death');
-    modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
-    scoreEl.textContent=0;totalEl.textContent=NUM_TROPHIES;
-    
     for(let i=0;i<NUM_TROPHIES;i++)trophies.push(emptyTile());
     for(let i=0;i<NUM_ENEMIES;i++) enemies.push(emptyTile());
     const sp=emptyTile();sword={x:sp.x,y:sp.y,collected:false};
 }
 
+function startGame(){
+    if(prefs.sound) ga().resume();
+    sizeCanvas(); buildFloor(); resetGameData();
+    gameState = 'PLAY';
+    navScreen(null); // hide screens
+    hud.classList.add('show-hud');
+    lsRow.classList.add('show-ls');
+    ctrlWrap.classList.add('show-controls');
+    minimap.style.display = 'block';
+
+    clearTimeout(comboTimer);
+    comboBadge.classList.remove('show');
+    modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
+    scoreEl.textContent=0;totalEl.textContent=NUM_TROPHIES;
+}
+
 function triggerEnd(win){
-    isGameOver=true;
+    gameState = 'DEAD';
+    hud.classList.remove('show-hud');
+    lsRow.classList.remove('show-ls');
+    ctrlWrap.classList.remove('show-controls');
+    minimap.style.display = 'none';
+
     document.getElementById('st-t').textContent=score;
     document.getElementById('st-k').textContent=kills;
     document.getElementById('st-c').textContent='x'+bestCombo;
+    
+    if(score > prefs.bestScore) { prefs.bestScore = score; savePrefs(); }
+
+    const gov = document.getElementById('screen-gameover');
     if(win){
         document.getElementById('ov-icon').textContent='🏆';
         document.getElementById('ov-title').textContent='VICTORY!';
         document.getElementById('ov-desc').textContent='ALL TROPHIES COLLECTED';
-        overlay.classList.remove('death');sfx.win();
+        gov.classList.remove('death'); sfx.win();
     } else {
         document.getElementById('ov-icon').textContent='💀';
         document.getElementById('ov-title').textContent='YOU DIED!';
         document.getElementById('ov-desc').textContent='THE GLITCH CAUGHT YOU.';
-        overlay.classList.add('death');sfx.death();
+        gov.classList.add('death'); sfx.death();
     }
-    setTimeout(()=>overlay.classList.add('show'),400);
+    setTimeout(()=>navScreen('screen-gameover'), 600);
 }
 
 // ── enemy AI ──
@@ -428,15 +529,12 @@ function moveEnemies(){
         }
         if(map[ny]&&map[ny][nx]!==1&&!enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){en.x=nx;en.y=ny;}
         
-        // Instant Death Collision Check
         if(en.x===player.x&&en.y===player.y){
             if(player.hasSword){
-                en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);
+                vibe(); en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);
                 addHL(en.x,en.y,'#ef4444');sfx.kill();doCombo();
             } else { 
-                shake(); 
-                player.dead=true; 
-                triggerEnd(false); 
+                shake(); player.dead=true; triggerEnd(false); 
             }
         }
     });
@@ -445,12 +543,12 @@ function moveEnemies(){
 
 // ── player move ──
 function movePlayer(dir){
-    if(isGameOver)return;
+    if(gameState !== 'PLAY') return;
     let nx=player.x,ny=player.y;
     if(dir==='w')ny--;if(dir==='s')ny++;
     if(dir==='a')nx--;if(dir==='d')nx++;
     if(ny<0||ny>=ROWS||nx<0||nx>=COLS||map[ny][nx]===1)return;
-    player.x=nx;player.y=ny;sfx.step();
+    player.x=nx;player.y=ny;sfx.step(); vibe();
 
     const ti=trophies.findIndex(t=>t.x===nx&&t.y===ny);
     if(ti>-1){
@@ -458,32 +556,26 @@ function movePlayer(dir){
         addHL(nx,ny,'#eab308');
         const m=doCombo();
         spawnFloat(nx,ny,m>=2?'+'+m+' COMBO!':'+1');
-        sfx.trophy();
+        sfx.trophy(); vibe();
         if(score>=NUM_TROPHIES)return triggerEnd(true);
     }
     if(!sword.collected&&nx===sword.x&&ny===sword.y){
         sword.collected=true;player.hasSword=true;
         modeEl.textContent='SLAYER!';modeEl.classList.add('slayer');
-        addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'⚔ ARMED!');sfx.sword();
+        addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'⚔ ARMED!');sfx.sword(); vibe();
     }
     
-    // Instant Death Collision Check
     const ei=enemies.findIndex(e=>e.x===nx&&e.y===ny);
     if(ei>-1){
         if(player.hasSword){
-            kills++;spawnFloat(nx,ny,'✦ SLAIN',true);
+            vibe(); kills++;spawnFloat(nx,ny,'✦ SLAIN',true);
             addHL(nx,ny,'#ef4444');enemies.splice(ei,1);sfx.kill();doCombo();
         } else {
-            shake(); 
-            player.dead=true; 
-            triggerEnd(false); 
-            return;
+            shake(); player.dead=true; triggerEnd(false); return;
         }
     }
     
-    if(!player.dead) {
-        moveEnemies();
-    }
+    if(!player.dead) moveEnemies();
 }
 
 // ── draw helpers ──
@@ -496,6 +588,7 @@ function drawT(name,x,y){
 
 // ── minimap ──
 function drawMinimap(){
+    if(gameState !== 'PLAY') return;
     const mm=4;mctx.clearRect(0,0,minimap.width,minimap.height);
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
         mctx.fillStyle=map[y][x]===1?'#18182a':'#2d4a1e';
@@ -508,15 +601,13 @@ function drawMinimap(){
 }
 
 // ── main loop ──
-let t0=0;
 function loop(ts){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    // floor
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
         drawT(floorV[y]&&floorV[y][x]||'grass',x,y);
         if(map[y][x]===1)drawT('wall',x,y);
     }
-    // highlights
+    
     highlights=highlights.filter(h=>{
         h.alpha-=h.decay;
         if(h.alpha<=0)return false;
@@ -524,18 +615,20 @@ function loop(ts){
         ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);ctx.restore();
         return true;
     });
-    // sword bob
+    
     if(!sword.collected){
         const bob=Math.round(Math.sin(ts/300));
         ctx.save();ctx.translate(0,bob);drawT('sword',sword.x,sword.y);ctx.restore();
     }
-    // trophy bob
+    
     trophies.forEach(t=>{
         const bob=Math.round(Math.sin(ts/400+t.x*.5));
         ctx.save();ctx.translate(0,bob);drawT('trophy',t.x,t.y);ctx.restore();
     });
+    
     enemies.forEach(e=>drawT('enemy',e.x,e.y));
     if(!player.dead)drawT(player.hasSword?'swordhero':'hero',player.x,player.y);
+    
     drawMinimap();
     requestAnimationFrame(loop);
 }
@@ -553,9 +646,13 @@ window.addEventListener('keydown',e=>{
     const m={w:'w',ArrowUp:'w',s:'s',ArrowDown:'s',a:'a',ArrowLeft:'a',d:'d',ArrowRight:'d'};
     if(m[e.key]){e.preventDefault();movePlayer(m[e.key]);}
 });
-document.getElementById('btn-restart').addEventListener('click',initGame);
-document.getElementById('btn-restart').addEventListener('touchstart',e=>{e.preventDefault();initGame();});
-window.addEventListener('resize',()=>isGameOver?sizeCanvas():initGame());
+
+window.addEventListener('resize',()=> {
+    if(gameState === 'PLAY') sizeCanvas();
+});
+
+// Setup Initial UI state
+updateSettingUI();
 </script>
 </body>
 </html>
