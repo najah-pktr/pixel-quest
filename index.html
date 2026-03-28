@@ -5,184 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f0f0f">
-    <title>Pixel Quest Survival</title>
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="description" content="Kage Path - A ninja's journey through 3 dangerous lands to reclaim the stolen sacred scrolls.">
+    <title>Kage Path</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#0f0f0f; --surface:#1a1a1a; --surface2:#222;
-            --border:#2a2a2a; --accent:#eab308; --danger:#ef4444;
-            --green:#22c55e; --text:#fff; --muted:#555;
+            --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c26;
+            --border:#2a2a3a; --accent:#c9a227; --accent2:#e8c547;
+            --danger:#cc3333; --purple:#7c3aed; --text:#f0e6d0;
+            --muted:#555566; --green:#22c55e;
+            /* level themes */
+            --l1-accent:#c9a227; --l2-accent:#7c3aed; --l3-accent:#cc3333;
         }
         *{box-sizing:border-box;margin:0;padding:0;}
+        html,body{width:100%;height:100%;overflow:hidden;}
         body{
-            background:var(--bg); display:flex; flex-direction:column;
-            align-items:center; justify-content:center;
-            min-height:100dvh; color:var(--text);
+            background:var(--bg);
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            min-height:100dvh;color:var(--text);
             font-family:'Press Start 2P',monospace;
-            overflow:hidden; touch-action:none;
-            user-select:none; -webkit-user-select:none;
+            touch-action:none;user-select:none;-webkit-user-select:none;
         }
 
-        /* ── HUD ── */
+        /* ─── HUD ─── */
         #hud{
-            display:none; /* Hidden in menus */
-            align-items:center; justify-content:space-between;
-            width:min(92vw,460px); padding:8px 14px;
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:10px; margin-bottom:8px; gap:8px; flex-wrap:wrap;
-            z-index: 10;
+            display:none;align-items:center;justify-content:space-between;
+            width:min(92vw,480px);padding:7px 12px;
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:10px;margin-bottom:7px;gap:8px;flex-wrap:wrap;z-index:10;
         }
-        
-        .trophy-count{font-size:9px;color:var(--accent);display:flex;align-items:center;gap:5px;}
+        #hud.active{display:flex;}
+        .hud-left{display:flex;align-items:center;gap:10px;}
+        .hud-right{display:flex;align-items:center;gap:8px;}
+
+        .scroll-count{font-size:8px;color:var(--accent);display:flex;align-items:center;gap:5px;}
+
+        /* sword timer bar */
+        #sword-timer-wrap{
+            display:none;align-items:center;gap:5px;font-size:6px;color:var(--accent2);
+        }
+        #sword-timer-wrap.show{display:flex;}
+        #sword-bar-outer{
+            width:48px;height:6px;background:var(--border);
+            border-radius:3px;overflow:hidden;border:1px solid var(--border);
+        }
+        #sword-bar-inner{
+            height:100%;width:100%;background:var(--accent2);
+            border-radius:3px;transition:width .1s linear;
+        }
+        #sword-bar-inner.low{background:var(--danger);}
+
         .combo-badge{
-            font-size:7px; background:var(--accent); color:#000;
-            padding:3px 8px; border-radius:4px;
-            opacity:0; transition:opacity .2s; white-space:nowrap;
+            font-size:7px;background:var(--accent);color:#000;
+            padding:3px 8px;border-radius:4px;opacity:0;transition:opacity .2s;white-space:nowrap;
         }
         .combo-badge.show{opacity:1;}
         .mode-badge{
-            font-size:6px; padding:4px 8px; border-radius:4px;
-            border:1px solid var(--border); color:var(--muted);
-            white-space:nowrap; transition:all .3s;
+            font-size:6px;padding:4px 8px;border-radius:4px;
+            border:1px solid var(--border);color:var(--muted);white-space:nowrap;transition:all .3s;
         }
         .mode-badge.slayer{
-            color:var(--accent); border-color:var(--accent);
-            text-shadow:0 0 8px rgba(234,179,8,.6);
-            box-shadow:0 0 10px rgba(234,179,8,.15);
+            color:var(--accent2);border-color:var(--accent2);
+            text-shadow:0 0 8px rgba(232,197,71,.6);
+            box-shadow:0 0 10px rgba(232,197,71,.12);
         }
+        .level-badge{font-size:6px;color:var(--muted);white-space:nowrap;}
 
-        /* ── CANVAS ── */
+        /* ─── CANVAS ─── */
         #canvas-wrap{
-            position:relative; border-radius:8px; overflow:hidden;
+            position:relative;border-radius:8px;overflow:hidden;
             border:2px solid var(--border);
-            box-shadow:0 10px 40px rgba(0,0,0,.8); background:#000;
+            box-shadow:0 10px 50px rgba(0,0,0,.9);background:#000;
         }
         #canvas-wrap.shake{animation:shake .4s ease;}
         @keyframes shake{
             10%{transform:translate(-5px,-3px) rotate(-1deg)}
             20%{transform:translate(5px,3px) rotate(1deg)}
-            30%{transform:translate(-4px,2px)}
-            40%{transform:translate(4px,-4px) rotate(1deg)}
-            50%{transform:translate(-3px,3px) rotate(-1deg)}
-            60%{transform:translate(3px,1px)}
-            70%{transform:translate(-2px,-2px) rotate(1deg)}
-            80%{transform:translate(2px,2px) rotate(-1deg)}
-            90%{transform:translate(-1px,1px)}
-            100%{transform:translate(0,0)}
+            30%{transform:translate(-4px,2px)}40%{transform:translate(4px,-4px) rotate(1deg)}
+            50%{transform:translate(-3px,3px) rotate(-1deg)}60%{transform:translate(3px,1px)}
+            70%{transform:translate(-2px,-2px) rotate(1deg)}80%{transform:translate(2px,2px) rotate(-1deg)}
+            90%{transform:translate(-1px,1px)}100%{transform:translate(0,0)}
         }
         canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
-
         #minimap{
-            position:absolute; bottom:7px; right:7px;
-            border:1px solid rgba(255,255,255,.15);
-            border-radius:3px; background:rgba(0,0,0,.75);
-            image-rendering:pixelated; pointer-events:none;
-            opacity:.9; display: none;
+            position:absolute;bottom:7px;right:7px;
+            border:1px solid rgba(255,255,255,.12);border-radius:3px;
+            background:rgba(0,0,0,.8);image-rendering:pixelated;
+            pointer-events:none;opacity:.9;display:none;
         }
-
         .float-txt{
-            position:absolute; font-size:7px;
-            font-family:'Press Start 2P',monospace;
-            color:var(--accent); pointer-events:none;
-            animation:fup .9s ease forwards; z-index:20;
-            white-space:nowrap; text-shadow:0 0 6px rgba(234,179,8,.8);
+            position:absolute;font-size:7px;font-family:'Press Start 2P',monospace;
+            color:var(--accent);pointer-events:none;
+            animation:fup .9s ease forwards;z-index:20;
+            white-space:nowrap;text-shadow:0 0 6px rgba(201,162,39,.8);
         }
-        .float-txt.kill{color:var(--danger);text-shadow:0 0 6px rgba(239,68,68,.8);}
+        .float-txt.kill{color:var(--danger);text-shadow:0 0 6px rgba(204,51,51,.8);}
+        .float-txt.shield{color:#60a5fa;text-shadow:0 0 6px rgba(96,165,250,.8);}
         @keyframes fup{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-30px);opacity:0}}
 
-        /* ── CONTROLS ── */
-        #controls-wrapper { display: none; width: 100%; justify-content: center; }
+        /* ─── DPAD ─── */
+        #controls-wrapper{display:none;width:100%;justify-content:center;}
+        #controls-wrapper.active{display:flex;}
         #dpad-portrait{
-            display:grid; grid-template-columns:repeat(3,60px);
-            grid-template-rows:repeat(2,60px); gap:8px; margin-top:12px;
+            display:grid;grid-template-columns:repeat(3,60px);
+            grid-template-rows:repeat(2,60px);gap:8px;margin-top:10px;
         }
-        .dpad-ls{
-            display:grid; grid-template-columns:repeat(3,56px);
-            grid-template-rows:repeat(2,56px); gap:8px;
-        }
+        .dpad-ls{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,56px);gap:8px;}
         .btn{
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:50%; display:flex; align-items:center; justify-content:center;
-            box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05);
-            transition:transform .08s,background .1s; cursor:pointer;
+            background:var(--surface);border:1px solid var(--border);border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+            transition:transform .08s,background .1s;cursor:pointer;
             -webkit-tap-highlight-color:transparent;
         }
-        .btn svg{width:26px;height:26px;fill:rgba(255,255,255,.8);}
-        .btn:active{background:#2a2a2a;transform:scale(.88);}
-        .up{grid-column:2;grid-row:1;} .left{grid-column:1;grid-row:2;}
-        .down{grid-column:2;grid-row:2;} .right{grid-column:3;grid-row:2;}
+        .btn svg{width:26px;height:26px;fill:rgba(255,255,255,.75);}
+        .btn:active{background:#222230;transform:scale(.88);}
+        .up{grid-column:2;grid-row:1;}.left{grid-column:1;grid-row:2;}
+        .down{grid-column:2;grid-row:2;}.right{grid-column:3;grid-row:2;}
 
-        .made-by{position: fixed; bottom: 10px; font-size:6px; color:var(--muted); letter-spacing:1px; z-index: 5;}
+        /* ─── MADE BY ─── */
+        .made-by{position:fixed;bottom:9px;font-size:6px;color:var(--muted);letter-spacing:1px;z-index:5;}
         .made-by span{color:var(--accent);}
 
-        /* ── MENUS & OVERLAYS ── */
-        .ui-screen {
-            position:fixed;inset:0;background:rgba(15,15,15,.95); /* Uses --bg base */
+        /* ─── UI SCREENS ─── */
+        .ui-screen{
+            position:fixed;inset:0;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            gap:15px; opacity:0; pointer-events:none; transition:opacity .3s; z-index:100;
+            gap:14px;opacity:0;pointer-events:none;transition:opacity .35s;z-index:100;
+            background:rgba(10,10,15,.97);
         }
-        .ui-screen.show { opacity:1; pointer-events:all; }
-        
-        .game-title { font-size:clamp(16px, 5vw, 28px); color:var(--accent); text-align:center; line-height:1.4; text-shadow: 4px 4px 0px var(--surface2); margin-bottom: 20px;}
-        
-        .menu-btn {
-            font-family:'Press Start 2P',monospace; padding:14px 24px; font-size:9px;
-            background:var(--surface); color:var(--text); border:2px solid var(--border);
-            border-radius:8px; cursor:pointer; transition:all .1s; width: 220px; text-align: center;
+        .ui-screen.show{opacity:1;pointer-events:all;}
+
+        /* main menu bg particles handled by JS canvas */
+        .game-title{
+            font-size:clamp(18px,5.5vw,32px);color:var(--accent);
+            text-align:center;line-height:1.5;
+            text-shadow:0 0 30px rgba(201,162,39,.4),4px 4px 0 #3a2a00;
+            margin-bottom:6px;
+            animation:titlepulse 3s ease-in-out infinite;
         }
-        .menu-btn:active { transform:scale(.95); }
-        .menu-btn.primary { background:var(--accent); color:#000; border-color:var(--accent); box-shadow:0 4px 20px rgba(234,179,8,.2); }
-        
-        .panel {
-            background:var(--surface); border:2px solid var(--border); border-radius:12px;
-            padding: 20px; width: 280px; display: flex; flex-direction: column; gap: 15px;
+        .game-subtitle{font-size:8px;color:var(--muted);letter-spacing:2px;margin-top:-8px;}
+        @keyframes titlepulse{0%,100%{text-shadow:0 0 20px rgba(201,162,39,.3),4px 4px 0 #3a2a00}50%{text-shadow:0 0 40px rgba(201,162,39,.6),4px 4px 0 #3a2a00}}
+
+        .menu-btn{
+            font-family:'Press Start 2P',monospace;padding:13px 24px;font-size:9px;
+            background:var(--surface);color:var(--text);border:2px solid var(--border);
+            border-radius:8px;cursor:pointer;transition:all .15s;width:220px;text-align:center;
+            letter-spacing:.5px;
         }
-        .panel-row { display: flex; justify-content: space-between; align-items: center; font-size: 8px; }
-        .toggle-btn { padding: 8px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 8px; }
-        .toggle-btn.active { color: var(--accent); border-color: var(--accent); }
+        .menu-btn:hover{border-color:var(--accent);color:var(--accent);}
+        .menu-btn:active{transform:scale(.95);}
+        .menu-btn.primary{
+            background:var(--accent);color:#000;border-color:var(--accent);
+            box-shadow:0 4px 24px rgba(201,162,39,.25);
+        }
+        .menu-btn.primary:hover{background:var(--accent2);border-color:var(--accent2);}
 
-        .credits-link { color: var(--accent); text-decoration: none; font-size: 7px; }
-        .credits-link:hover { text-decoration: underline; }
+        .panel{
+            background:var(--surface);border:2px solid var(--border);border-radius:12px;
+            padding:18px;width:280px;display:flex;flex-direction:column;gap:14px;
+        }
+        .panel-row{display:flex;justify-content:space-between;align-items:center;font-size:8px;}
+        .toggle-btn{
+            padding:7px 12px;background:var(--surface2);color:var(--muted);
+            border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:8px;cursor:pointer;
+        }
+        .toggle-btn.on{color:var(--accent);border-color:var(--accent);}
 
-        /* Game Over Specific */
-        .ov-stats{ font-size:8px; color:var(--accent); display:flex; flex-direction:column; gap:8px; width: 100%;}
-        .ov-stats div{ display:flex; justify-content:space-between; gap:20px; }
-        .ov-stats span{ color:#fff; }
-        #screen-gameover.death .game-title { color:var(--danger); text-shadow: 4px 4px 0px #4a0000; }
-        #screen-gameover.death .menu-btn.primary { background:var(--danger); color:#fff; border-color:var(--danger); box-shadow:0 4px 20px rgba(239,68,68,.3); }
+        /* ─── CUTSCENE ─── */
+        #screen-cutscene{background:rgba(5,5,10,.98);}
+        .cutscene-level{font-size:8px;color:var(--muted);letter-spacing:3px;margin-bottom:4px;}
+        .cutscene-title{font-size:clamp(16px,4vw,24px);color:var(--accent);text-align:center;line-height:1.5;margin-bottom:4px;}
+        .cutscene-story{
+            font-size:8px;color:#aaa09a;text-align:center;line-height:2.2;
+            max-width:320px;border-left:2px solid var(--accent);padding-left:14px;
+        }
+        .cutscene-tip{font-size:7px;color:var(--muted);text-align:center;margin-top:6px;}
 
-        /* ── LANDSCAPE ── */
-        #ls-row{display:none;align-items:center;justify-content:center;gap:20px;width:100%;}
+        /* ─── LEVEL COMPLETE ─── */
+        #screen-levelcomplete .game-title{font-size:clamp(14px,4vw,20px);}
 
-        @media (orientation:landscape){
-            #hud.show-hud {
+        /* ─── GAME OVER ─── */
+        .ov-stats{font-size:8px;color:var(--accent);display:flex;flex-direction:column;gap:10px;width:100%;}
+        .ov-stats div{display:flex;justify-content:space-between;gap:20px;}
+        .ov-stats span{color:var(--text);}
+        #screen-gameover.death .game-title{color:var(--danger);text-shadow:4px 4px 0 #3a0000,0 0 30px rgba(204,51,51,.4);}
+        #screen-gameover.death .menu-btn.primary{background:var(--danger);color:#fff;border-color:var(--danger);box-shadow:0 4px 20px rgba(204,51,51,.3);}
+
+        .credits-link{color:var(--accent);text-decoration:none;font-size:7px;}
+        .credits-link:hover{text-decoration:underline;}
+
+        /* ─── LANDSCAPE ─── */
+        #ls-row{display:none;align-items:center;justify-content:center;gap:18px;width:100%;}
+
+        @media(orientation:landscape){
+            #hud.active{
                 position:fixed;top:8px;left:50%;transform:translateX(-50%);
-                z-index:50;width:auto;min-width:280px; flex-wrap:nowrap; display: flex;
+                z-index:50;width:auto;min-width:300px;flex-wrap:nowrap;
             }
-            #controls-wrapper{display:none !important;}
-            #ls-row.show-ls {display:flex;}
-            .made-by{position:fixed;bottom:8px;right:14px;margin:0;}
+            #controls-wrapper{display:none!important;}
+            #ls-row.active{display:flex;}
+            .made-by{right:14px;}
         }
-        @media (orientation:portrait){
-            #hud.show-hud { display: flex; }
-            #controls-wrapper.show-controls { display: flex; }
+        @media(orientation:portrait){
+            #hud.active{display:flex;}
+            #controls-wrapper.active{display:flex;}
         }
     </style>
 </head>
 <body>
 
+<!-- HUD -->
 <div id="hud">
-    <div class="trophy-count">🏆 <span id="score">0</span>/<span id="total">0</span></div>
-    <div class="combo-badge" id="combo-badge">x2 COMBO!</div>
-    <div class="mode-badge" id="mode">RUN!</div>
+    <div class="hud-left">
+        <div class="scroll-count">📜 <span id="score">0</span>/<span id="total">0</span></div>
+        <div id="sword-timer-wrap">
+            ⚔<div id="sword-bar-outer"><div id="sword-bar-inner"></div></div>
+        </div>
+    </div>
+    <div class="hud-right">
+        <div class="combo-badge" id="combo-badge">x2!</div>
+        <div class="mode-badge" id="mode">RUN!</div>
+        <div class="level-badge" id="level-badge">L1</div>
+    </div>
 </div>
 
+<!-- LANDSCAPE ROW -->
 <div id="ls-row">
     <div class="dpad-ls">
-        <div class="btn up" id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-        <div class="btn left" id="la"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-        <div class="btn down" id="ls_"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn up"    id="lw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left"  id="la"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down"  id="ls_"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
         <div class="btn right" id="ld"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
     </div>
     <div id="canvas-wrap">
@@ -193,110 +247,236 @@
 </div>
 
 <div id="port-slot"></div>
-
 <div id="controls-wrapper">
     <div id="dpad-portrait">
-        <div class="btn up" id="pw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
-        <div class="btn left" id="pa"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
-        <div class="btn down" id="ps"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
+        <div class="btn up"    id="pw"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg></div>
+        <div class="btn left"  id="pa"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8v-6z"/></svg></div>
+        <div class="btn down"  id="ps"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg></div>
         <div class="btn right" id="pd"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg></div>
     </div>
 </div>
 
-<div class="made-by">v1.0.0 ✦ MADE BY <span>NAJAH</span></div>
+<div class="made-by">KAGE PATH v1.0 ✦ BY <span>NAJAH</span></div>
 
+<!-- ── MAIN MENU ── -->
 <div id="screen-menu" class="ui-screen show">
-    <div class="game-title">PIXEL QUEST<br>SURVIVAL</div>
-    <button class="menu-btn primary" onclick="startGame()">START GAME</button>
-    <button class="menu-btn" onclick="navScreen('screen-settings')">SETTINGS</button>
-    <button class="menu-btn" onclick="navScreen('screen-credits')">CREDITS</button>
+    <div style="font-size:36px;margin-bottom:-6px;">🥷</div>
+    <div class="game-title">KAGE PATH</div>
+    <div class="game-subtitle">THE NINJA'S JOURNEY</div>
+    <button class="menu-btn primary" onclick="startCutscene(1)">▶ START GAME</button>
+    <button class="menu-btn" onclick="nav('screen-settings')">SETTINGS</button>
+    <button class="menu-btn" onclick="nav('screen-credits')">CREDITS</button>
 </div>
 
+<!-- ── CUTSCENE ── -->
+<div id="screen-cutscene" class="ui-screen">
+    <div class="cutscene-level" id="cs-level">LEVEL 1</div>
+    <div class="cutscene-title" id="cs-title">THE GOLDEN FOREST</div>
+    <div class="cutscene-story" id="cs-story">Loading...</div>
+    <div class="cutscene-tip"   id="cs-tip"></div>
+    <button class="menu-btn primary" id="cs-btn" onclick="beginLevel()">BEGIN</button>
+</div>
+
+<!-- ── LEVEL COMPLETE ── -->
+<div id="screen-levelcomplete" class="ui-screen">
+    <div style="font-size:38px;">⛩️</div>
+    <div class="game-title" id="lc-title">LEVEL CLEAR!</div>
+    <div class="panel" style="width:260px;">
+        <div class="ov-stats">
+            <div><span>SCROLLS</span>   <span id="lc-scrolls">0</span></div>
+            <div><span>ENEMIES</span>   <span id="lc-kills">0</span></div>
+            <div><span>BEST COMBO</span><span id="lc-combo">x1</span></div>
+        </div>
+    </div>
+    <button class="menu-btn primary" id="lc-btn" onclick="nextLevel()">NEXT LEVEL ▶</button>
+</div>
+
+<!-- ── GAME OVER ── -->
+<div id="screen-gameover" class="ui-screen">
+    <div style="font-size:40px;margin-bottom:-6px;" id="ov-icon">💀</div>
+    <div class="game-title" id="ov-title">YOU FELL!</div>
+    <p style="font-size:8px;color:#888;margin-bottom:4px;" id="ov-desc">THE SHADOW CLAN STOPPED YOU.</p>
+    <div class="panel" style="width:260px;">
+        <div class="ov-stats">
+            <div><span>SCROLLS</span>   <span id="st-t">0</span></div>
+            <div><span>ENEMIES</span>   <span id="st-k">0</span></div>
+            <div><span>BEST COMBO</span><span id="st-c">x1</span></div>
+        </div>
+    </div>
+    <button class="menu-btn primary" onclick="startCutscene(currentLevel)">TRY AGAIN</button>
+    <button class="menu-btn" onclick="nav('screen-menu')">MAIN MENU</button>
+</div>
+
+<!-- ── VICTORY ── -->
+<div id="screen-victory" class="ui-screen">
+    <div style="font-size:44px;">🏯</div>
+    <div class="game-title" style="color:var(--accent2);">PATH COMPLETE!</div>
+    <div style="font-size:8px;color:#aaa;text-align:center;line-height:2;max-width:280px;">
+        THE SCROLLS HAVE BEEN RECLAIMED.<br>THE SHADOW CLAN DEFEATED.<br>KAGE WALKS FREE.
+    </div>
+    <div class="panel" style="width:260px;">
+        <div class="ov-stats">
+            <div><span>TOTAL SCROLLS</span><span id="fin-scrolls">0</span></div>
+            <div><span>TOTAL KILLS</span>  <span id="fin-kills">0</span></div>
+            <div><span>BEST SCORE</span>   <span id="fin-best">0</span></div>
+        </div>
+    </div>
+    <button class="menu-btn primary" onclick="startCutscene(1)">PLAY AGAIN</button>
+    <button class="menu-btn" onclick="nav('screen-menu')">MAIN MENU</button>
+</div>
+
+<!-- ── SETTINGS ── -->
 <div id="screen-settings" class="ui-screen">
-    <h1 class="game-title" style="font-size: 16px;">SETTINGS</h1>
+    <div class="game-title" style="font-size:16px;">SETTINGS</div>
     <div class="panel">
         <div class="panel-row">
             <span>SOUND FX</span>
-            <button class="toggle-btn" id="btn-snd" onclick="toggleSetting('sound')">ON</button>
+            <button class="toggle-btn" id="btn-snd" onclick="togglePref('sound')">ON</button>
         </div>
         <div class="panel-row">
             <span>HAPTICS</span>
-            <button class="toggle-btn" id="btn-vib" onclick="toggleSetting('haptics')">ON</button>
+            <button class="toggle-btn" id="btn-vib" onclick="togglePref('haptics')">ON</button>
         </div>
-        <div class="panel-row" style="color:var(--accent); justify-content:center; margin-top:10px;">
-            <span>BEST SCORE: <span id="stat-best-score">0</span></span>
+        <div class="panel-row" style="color:var(--accent);justify-content:center;margin-top:4px;">
+            BEST SCORE: <span id="stat-best" style="color:var(--text);margin-left:8px;">0</span>
         </div>
     </div>
-    <button class="menu-btn" onclick="navScreen('screen-menu')">BACK</button>
+    <button class="menu-btn" onclick="nav('screen-menu')">BACK</button>
 </div>
 
+<!-- ── CREDITS ── -->
 <div id="screen-credits" class="ui-screen">
-    <h1 class="game-title" style="font-size: 16px;">CREDITS</h1>
-    <div class="panel" style="text-align:center; line-height: 1.8;">
-        <span style="font-size: 8px; color:#888;">DESIGN, DEVELOPMENT, MUSIC, ART & DIRECTION</span>
-        <span style="font-size: 10px; color:var(--text);">Mohamed Najah P</span>
-        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-            <a href="https://github.com/najah-pktr" target="_blank" class="credits-link">Github</a>
-            <a href="https://mohamednajah.netlify.app" target="_blank" class="credits-link">Dev Portfolio</a>
-            <a href="https://instagram.com/@najah_pktr" target="_blank" class="credits-link">Instagram</a>
+    <div class="game-title" style="font-size:14px;">CREDITS</div>
+    <div class="panel" style="text-align:center;line-height:2.2;gap:10px;">
+        <span style="font-size:7px;color:#888;">DESIGN · DEV · ART · MUSIC</span>
+        <span style="font-size:10px;">Mohamed Najah P</span>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+            <a href="https://github.com/najah-pktr" target="_blank" class="credits-link">GitHub — najah-pktr</a>
+            <a href="https://mohamednajah.netlify.app" target="_blank" class="credits-link">Portfolio</a>
+            <a href="https://instagram.com/najah_pktr" target="_blank" class="credits-link">Instagram</a>
         </div>
     </div>
-    <button class="menu-btn" onclick="navScreen('screen-menu')">BACK</button>
-</div>
-
-<div id="screen-gameover" class="ui-screen">
-    <div style="font-size:46px; margin-bottom:-10px;" id="ov-icon">🏆</div>
-    <h1 class="game-title" id="ov-title">VICTORY!</h1>
-    <p id="ov-desc" style="font-size:8px; color:#888; margin-bottom:10px;">ALL TROPHIES COLLECTED</p>
-    <div class="panel">
-        <div class="ov-stats">
-            <div><span>TROPHIES</span> <span id="st-t">0</span></div>
-            <div><span>ENEMIES SLAIN</span><span id="st-k">0</span></div>
-            <div><span>BEST COMBO</span> <span id="st-c">x1</span></div>
-        </div>
-    </div>
-    <button class="menu-btn primary" onclick="startGame()">PLAY AGAIN</button>
-    <button class="menu-btn" onclick="navScreen('screen-menu')">MAIN MENU</button>
+    <button class="menu-btn" onclick="nav('screen-menu')">BACK</button>
 </div>
 
 <script>
-  if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-  }
-</script>
-<script>
-// ── Settings & Storage ──
-let prefs = { sound: true, haptics: true, bestScore: 0 };
-try {
-    const saved = JSON.parse(localStorage.getItem('pixelQuestPrefs'));
-    if(saved) prefs = { ...prefs, ...saved };
-} catch(e) {}
+// ═══════════════════════════════════════════════
+//  KAGE PATH — Production Build
+//  By Mohamed Najah P
+// ═══════════════════════════════════════════════
 
-function savePrefs() { localStorage.setItem('pixelQuestPrefs', JSON.stringify(prefs)); }
-function updateSettingUI() {
-    document.getElementById('btn-snd').textContent = prefs.sound ? 'ON' : 'OFF';
-    document.getElementById('btn-snd').className = prefs.sound ? 'toggle-btn active' : 'toggle-btn';
-    document.getElementById('btn-vib').textContent = prefs.haptics ? 'ON' : 'OFF';
-    document.getElementById('btn-vib').className = prefs.haptics ? 'toggle-btn active' : 'toggle-btn';
-    document.getElementById('stat-best-score').textContent = prefs.bestScore;
+// ── PREFS ──
+let prefs={sound:true,haptics:true,bestScore:0};
+try{const s=JSON.parse(localStorage.getItem('kagePathPrefs'));if(s)prefs={...prefs,...s};}catch(e){}
+function savePrefs(){try{localStorage.setItem('kagePathPrefs',JSON.stringify(prefs));}catch(e){}}
+function togglePref(k){prefs[k]=!prefs[k];savePrefs();refreshSettingsUI();}
+function refreshSettingsUI(){
+    const bs=document.getElementById('btn-snd'),bv=document.getElementById('btn-vib');
+    bs.textContent=prefs.sound?'ON':'OFF'; bs.className=prefs.sound?'toggle-btn on':'toggle-btn';
+    bv.textContent=prefs.haptics?'ON':'OFF'; bv.className=prefs.haptics?'toggle-btn on':'toggle-btn';
+    document.getElementById('stat-best').textContent=prefs.bestScore;
 }
-function toggleSetting(key) { prefs[key] = !prefs[key]; savePrefs(); updateSettingUI(); }
-function vibe() { if(prefs.haptics && navigator.vibrate) navigator.vibrate(40); }
+function vibe(ms=40){if(prefs.haptics&&navigator.vibrate)navigator.vibrate(ms);}
 
-// ── UI Navigation ──
-let gameState = 'MENU'; // MENU, PLAY, DEAD
-const screens = ['screen-menu', 'screen-settings', 'screen-credits', 'screen-gameover'];
-function navScreen(id) {
-    screens.forEach(s => document.getElementById(s).classList.remove('show'));
-    if(id) document.getElementById(id).classList.add('show');
-    if(id === 'screen-settings') updateSettingUI();
-}
+// ── LEVEL CONFIG ──
+const LEVEL_DATA = [
+    {
+        num:1,
+        name:'THE GOLDEN FOREST',
+        story:'The Shadow Clan has stolen the sacred scrolls from the Temple of Kage.\n\nNinja Kage enters the Golden Forest — the first territory held by the clan\'s forest guards.\n\nRetrieve the scrolls. Leave no guard standing.',
+        tip:'TIP: FIND THE SWORD — IT LASTS 15 SECONDS',
+        trophies:5, enemies:3, enemySpeed:1,
+        hasShield:false,
+        // floor tile names (placeholder fallbacks built-in)
+        floor:['grass','grass1','grass2'],
+        wall:'wall',
+        accentColor:'#c9a227',
+    },
+    {
+        num:2,
+        name:'THE SHADOW CAVE',
+        story:'The guards have fled underground.\n\nDeep in the Shadow Cave, the clan\'s warriors are faster and more dangerous.\n\nA shield relic was left behind by an old ally — find it before they find you.',
+        tip:'TIP: SHIELD BLOCKS ONE HIT. SWORD STILL ONLY LASTS 15s.',
+        trophies:6, enemies:4, enemySpeed:1,
+        hasShield:true,
+        floor:['floor2','floor2','grass2'],
+        wall:'wall2',
+        accentColor:'#7c3aed',
+    },
+    {
+        num:3,
+        name:'THE CLAN FORTRESS',
+        story:'The fortress. The heart of the Shadow Clan.\n\nElite warriors patrol every corridor. The final scrolls are hidden deep inside.\n\nThis is the end of the path. Make it count.',
+        tip:'TIP: ELITE GUARDS MOVE FAST. USE THE SWORD WISELY.',
+        trophies:7, enemies:5, enemySpeed:2,
+        hasShield:false,
+        floor:['floor3','floor3','grass2'],
+        wall:'wall3',
+        accentColor:'#cc3333',
+    }
+];
 
-// ── refs ──
+// ── MAPS per level ──
+const MAPS = [
+    // Level 1 — Forest (10×10)
+    [
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,1,1,0,1],
+        [1,0,1,0,0,0,0,1,0,1],
+        [1,0,0,0,1,1,0,0,0,1],
+        [1,1,1,0,0,0,0,1,1,1],
+        [1,0,0,0,1,1,0,0,0,1],
+        [1,0,1,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1]
+    ],
+    // Level 2 — Cave (12×12)
+    [
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,1,0,0,0,0,1,0,1],
+        [1,0,1,0,0,0,1,1,0,0,0,1],
+        [1,0,1,1,0,1,0,0,0,1,0,1],
+        [1,0,0,0,0,0,0,1,0,0,0,1],
+        [1,1,0,1,1,0,0,0,0,1,1,1],
+        [1,0,0,0,0,0,1,0,0,0,0,1],
+        [1,0,1,1,0,0,0,0,1,1,0,1],
+        [1,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,0,1,0,0,0,1,0,0,1,1],
+        [1,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1]
+    ],
+    // Level 3 — Fortress (16×15 landscape / 12×12 portrait)
+    [
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,1,0,0,0,1,0,0,0,1],
+        [1,0,1,1,0,1,0,0,0,1,0,1],
+        [1,0,0,0,0,0,0,1,0,0,0,1],
+        [1,1,0,1,1,0,1,0,0,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,1,1],
+        [1,0,1,0,0,1,1,0,1,0,0,1],
+        [1,0,0,0,1,0,0,0,0,0,0,1],
+        [1,1,0,0,0,0,1,1,0,1,0,1],
+        [1,0,0,1,0,0,0,0,0,0,0,1],
+        [1,0,1,0,0,1,0,1,0,0,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1]
+    ]
+];
+
+const MAPS_LS = [
+    // L1 landscape 16×15
+    [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],[1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1],[1,0,1,0,0,1,0,0,0,0,1,1,0,0,0,1],[1,0,0,0,1,1,0,1,0,0,1,0,0,1,0,1],[1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],[1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1],[1,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1],[1,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],[1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1],[1,0,0,0,1,0,0,0,0,1,0,0,1,0,0,1],[1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1],[1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,1],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+    // L2 landscape 16×15
+    [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],[1,0,1,0,0,0,1,1,0,0,0,1,0,1,0,1],[1,1,0,0,1,0,0,0,0,1,0,0,0,0,0,1],[1,0,0,1,0,0,1,0,0,0,0,1,1,0,0,1],[1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1],[1,1,0,0,0,0,0,0,0,0,1,0,0,1,0,1],[1,0,0,1,1,0,1,0,0,1,0,0,0,0,0,1],[1,0,1,0,0,0,0,0,1,0,0,1,0,0,0,1],[1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],[1,1,0,0,0,0,1,0,0,1,0,0,0,0,0,1],[1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,1],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],[1,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+    // L3 landscape 16×15
+    [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1],[1,0,1,1,0,1,0,0,0,1,0,0,0,1,0,1],[1,0,0,0,0,0,0,1,0,0,1,1,0,0,0,1],[1,1,0,1,1,0,1,0,0,1,0,0,0,1,0,1],[1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1],[1,0,1,0,0,1,1,0,1,0,0,0,0,1,0,1],[1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],[1,1,0,0,0,0,1,1,0,1,0,0,0,1,0,1],[1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1],[1,0,1,0,0,1,0,1,0,0,1,0,0,1,0,1],[1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],[1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,1],[1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
+];
+
+// ── CANVAS / DOM REFS ──
 const canvas   = document.getElementById('gameCanvas');
 const ctx      = canvas.getContext('2d');
-const minimap  = document.getElementById('minimap');
-const mctx     = minimap.getContext('2d');
+const minimapEl= document.getElementById('minimap');
+const mctx     = minimapEl.getContext('2d');
 const wrap     = document.getElementById('canvas-wrap');
 const lsRow    = document.getElementById('ls-row');
 const portSlot = document.getElementById('port-slot');
@@ -307,95 +487,77 @@ const scoreEl  = document.getElementById('score');
 const totalEl  = document.getElementById('total');
 const modeEl   = document.getElementById('mode');
 const comboBadge = document.getElementById('combo-badge');
+const swordWrap  = document.getElementById('sword-timer-wrap');
+const swordBar   = document.getElementById('sword-bar-inner');
 
 const TILE = 16;
+const SWORD_DURATION = 15000; // 15 seconds
 
-// ── maps ──
-const MAP_P = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,0,1,1,1,0,1],
-    [1,0,1,0,0,0,0,1,0,1],
-    [1,0,0,0,1,1,0,0,0,1],
-    [1,1,1,0,0,0,0,1,1,1],
-    [1,0,0,0,1,1,0,0,0,1],
-    [1,0,1,1,1,1,1,1,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1]
-];
-const MAP_L = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-    [1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1],
-    [1,0,1,0,0,1,0,0,0,0,1,1,0,0,0,1],
-    [1,0,0,0,1,1,0,1,0,0,1,0,0,1,0,1],
-    [1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
-    [1,0,0,1,1,0,1,0,0,0,0,1,1,0,0,1],
-    [1,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1],
-    [1,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1],
-    [1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1],
-    [1,0,0,0,1,0,0,0,0,1,0,0,1,0,0,1],
-    [1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,1],
-    [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-];
+// ── GAME STATE ──
+let gameState = 'MENU'; // MENU | CUTSCENE | PLAY | LEVELCOMPLETE | DEAD | VICTORY
+let currentLevel = 1;
+let totalScrolls = 0, totalKills = 0;
 
-let map,COLS,ROWS,NUM_TROPHIES,NUM_ENEMIES;
-function isLS(){ return window.innerWidth>window.innerHeight; }
-function setupMap(){
-    if(isLS()){map=MAP_L.map(r=>[...r]);COLS=16;ROWS=15;NUM_TROPHIES=7;NUM_ENEMIES=4;}
-    else       {map=MAP_P.map(r=>[...r]);COLS=10;ROWS=10;NUM_TROPHIES=5;NUM_ENEMIES=3;}
+let map, COLS, ROWS, levelCfg;
+let player, sword, shield, scrolls, enemies, score;
+let kills, bestCombo, comboCount, comboTimer;
+let highlights = [];
+let swordExpiry = 0, swordTimerRAF = null;
+
+function isLS(){ return window.innerWidth > window.innerHeight; }
+
+function setupLevel(lvl){
+    levelCfg = LEVEL_DATA[lvl-1];
+    const mapArr = isLS() ? MAPS_LS[lvl-1] : MAPS[lvl-1];
+    map = mapArr.map(r=>[...r]);
+    ROWS = map.length; COLS = map[0].length;
 }
 
-// ── floor variants ──
+// ── FLOOR VARIANTS ──
 let floorV=[];
 function buildFloor(){
     floorV=[];
-    const variants=['grass','grass1','grass2'];
-    for(let y=0;y<ROWS;y++){floorV[y]=[];for(let x=0;x<COLS;x++)floorV[y][x]=variants[Math.floor(Math.random()*3)];}
+    const v=levelCfg.floor;
+    for(let y=0;y<ROWS;y++){floorV[y]=[];for(let x=0;x<COLS;x++)floorV[y][x]=v[Math.floor(Math.random()*v.length)];}
 }
 
-// ── sizing ──
+// ── CANVAS SIZING ──
 function sizeCanvas(){
-    setupMap();
     let tileSize;
     if(isLS()){const a=Math.min(window.innerHeight-100,window.innerWidth*.55);tileSize=Math.floor(a/ROWS);}
-    else      {tileSize=Math.floor(Math.min(window.innerWidth*.92,440)/COLS);}
-    const cw=COLS*tileSize, ch=ROWS*tileSize;
+    else{tileSize=Math.floor(Math.min(window.innerWidth*.92,460)/COLS);}
+    const cw=COLS*tileSize,ch=ROWS*tileSize;
     canvas.width=COLS*TILE; canvas.height=ROWS*TILE;
     canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
-    wrap.style.width=cw+'px';   wrap.style.height=ch+'px';
-
-    const mm=4;
-    minimap.width=COLS*mm; minimap.height=ROWS*mm;
-    minimap.style.width=COLS*mm+'px'; minimap.style.height=ROWS*mm+'px';
-
-    if(!isLS()){
-        portSlot.appendChild(wrap);
-        lsSpacer.style.width='0';
-    } else {
-        const dpadW = 3*56+2*8;
-        lsSpacer.style.width = dpadW+'px';
-    }
+    wrap.style.width=cw+'px'; wrap.style.height=ch+'px';
+    const mm=isLS()?3:4;
+    minimapEl.width=COLS*mm; minimapEl.height=ROWS*mm;
+    minimapEl.style.width=COLS*mm+'px'; minimapEl.style.height=ROWS*mm+'px';
+    if(!isLS()){portSlot.appendChild(wrap);lsSpacer.style.width='0';}
+    else{lsSpacer.style.width=(3*56+2*8)+'px';}
 }
 
-// ── assets ──
+// ── ASSETS ──
 const imgs={};
-const assetList=['hero','swordhero','enemy','grass','grass1','grass2','wall','trophy','sword'];
+// All possible assets — missing ones fall back to colored rects
+const ALL_ASSETS=['hero','swordhero','enemy','enemy2','grass','grass1','grass2',
+                  'wall','wall2','wall3','floor2','floor3','scroll','sword','shield'];
 let loadedN=0;
-assetList.forEach(n=>{
+ALL_ASSETS.forEach(n=>{
     const i=new Image(); i.src=n+'.png';
-    i.onload=i.onerror=()=>{if(++loadedN===assetList.length)boot();};
+    i.onload=i.onerror=()=>{if(++loadedN===ALL_ASSETS.length)onAssetsReady();};
     imgs[n]=i;
 });
-function boot(){sizeCanvas();buildFloor();resetGameData();requestAnimationFrame(loop);}
+function onAssetsReady(){
+    setupLevel(1);sizeCanvas();buildFloor();
+    requestAnimationFrame(loop);
+}
 
-// ── audio ──
+// ── AUDIO ──
 let ac;
 function ga(){if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();return ac;}
 function tone(f,t,d,v=.12,delay=0){
-    if(!prefs.sound) return;
+    if(!prefs.sound)return;
     try{const a=ga(),o=a.createOscillator(),g=a.createGain();
     o.connect(g);g.connect(a.destination);o.type=t;o.frequency.value=f;
     g.gain.setValueAtTime(v,a.currentTime+delay);
@@ -403,128 +565,199 @@ function tone(f,t,d,v=.12,delay=0){
     o.start(a.currentTime+delay);o.stop(a.currentTime+delay+d);}catch(e){}
 }
 const sfx={
-    step:   ()=>tone(180,'square',.04,.05),
-    trophy: ()=>{tone(523,'square',.08,.15);tone(659,'square',.08,.15,.08);tone(784,'square',.12,.15,.16);},
-    sword:  ()=>{tone(440,'sawtooth',.06,.2);tone(880,'square',.1,.2,.06);},
-    kill:   ()=>{tone(200,'sawtooth',.1,.2);tone(100,'sawtooth',.15,.2,.08);},
-    hurt:   ()=>{tone(120,'sawtooth',.2,.3);tone(80,'sawtooth',.2,.3,.1);},
-    win:    ()=>[523,659,784,1046].forEach((f,i)=>tone(f,'square',.15,.2,i*.12)),
-    death:  ()=>[400,300,200,100].forEach((f,i)=>tone(f,'sawtooth',.2,.25,i*.1)),
+    step:   ()=>tone(180,'square',.04,.04),
+    scroll: ()=>{tone(523,'square',.07,.13);tone(659,'square',.07,.13,.07);tone(784,'square',.1,.13,.14);},
+    sword:  ()=>{tone(440,'sawtooth',.06,.18);tone(880,'square',.09,.18,.05);},
+    shield: ()=>{tone(330,'triangle',.1,.18);tone(550,'triangle',.1,.18,.07);},
+    kill:   ()=>{tone(200,'sawtooth',.09,.18);tone(100,'sawtooth',.14,.18,.07);},
+    hurt:   ()=>{tone(120,'sawtooth',.18,.28);tone(80,'sawtooth',.18,.28,.09);},
+    swordend:()=>{tone(200,'square',.12,.15);tone(150,'square',.12,.15,.06);},
+    lvlclear:()=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,'square',.14,.18,i*.1));},
+    win:    ()=>{[523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,'square',.15,.2,i*.1));},
+    death:  ()=>[400,300,200,100].forEach((f,i)=>tone(f,'sawtooth',.18,.22,i*.09)),
 };
 
-// ── state ──
-let player,sword,trophies,enemies,score;
-let kills,bestCombo,comboCount,comboTimer;
-let highlights=[];
-
+// ── HELPERS ──
 function rnd(n){return Math.floor(Math.random()*n);}
-
-function emptyTile(){
-    let x,y,tries=0;
-    while(tries++<2000){
-        x=1+rnd(COLS-2);y=1+rnd(ROWS-2);
-        if(map[y][x]!==0)continue;
-        if(player && x===player.x&&y===player.y)continue;
-        const occ=trophies.some(t=>t.x===x&&t.y===y)||
-                  enemies.some(e=>e.x===x&&e.y===y)||
-                  (sword && !sword.collected&&sword.x===x&&sword.y===y);
-        if(!occ)return{x,y};
-    }
-    return{x:1,y:3};
-}
-
 function addHL(x,y,color){highlights.push({x,y,color,alpha:.7,decay:.055});}
-
-function px2screen(tx,ty){
+function px2s(tx,ty){
     const sx=parseInt(canvas.style.width)/canvas.width;
     const sy=parseInt(canvas.style.height)/canvas.height;
-    return{x:tx*TILE*sx, y:ty*TILE*sy};
+    return{x:tx*TILE*sx,y:ty*TILE*sy};
 }
-
-function spawnFloat(tx,ty,txt,kill=false){
-    const p=px2screen(tx,ty);
+function spawnFloat(tx,ty,txt,cls=''){
+    const p=px2s(tx,ty);
     const el=document.createElement('div');
-    el.className='float-txt'+(kill?' kill':'');
-    el.textContent=txt; el.style.left=p.x+'px'; el.style.top=p.y+'px';
-    wrap.appendChild(el); setTimeout(()=>el.remove(),900);
+    el.className='float-txt'+(cls?' '+cls:'');
+    el.textContent=txt;el.style.left=p.x+'px';el.style.top=p.y+'px';
+    wrap.appendChild(el);setTimeout(()=>el.remove(),900);
 }
-
 function doCombo(){
     comboCount++;clearTimeout(comboTimer);
     comboTimer=setTimeout(()=>{comboCount=0;comboBadge.classList.remove('show');},2000);
     if(comboCount>=2){
-        comboBadge.textContent=`x${comboCount} COMBO!`;
+        comboBadge.textContent='x'+comboCount+'!';
         comboBadge.classList.add('show');
         if(comboCount>bestCombo)bestCombo=comboCount;
     }
     return comboCount;
 }
-
 function shake(){
-    vibe();
-    wrap.classList.remove('shake');
-    void wrap.offsetWidth;
-    wrap.classList.add('shake');
-    setTimeout(()=>wrap.classList.remove('shake'),450);
+    vibe();wrap.classList.remove('shake');void wrap.offsetWidth;
+    wrap.classList.add('shake');setTimeout(()=>wrap.classList.remove('shake'),450);
 }
 
-function resetGameData() {
-    player={x:1,y:1,hasSword:false,dead:false};
-    sword={x:0,y:0,collected:false};
-    trophies=[];enemies=[];score=0;
-    kills=0;bestCombo=1;comboCount=0;highlights=[];
-    for(let i=0;i<NUM_TROPHIES;i++)trophies.push(emptyTile());
-    for(let i=0;i<NUM_ENEMIES;i++) enemies.push(emptyTile());
-    const sp=emptyTile();sword={x:sp.x,y:sp.y,collected:false};
+// ── SWORD TIMER ──
+function startSwordTimer(){
+    swordExpiry=Date.now()+SWORD_DURATION;
+    swordWrap.classList.add('show');
+    updateSwordBar();
 }
-
-function startGame(){
-    if(prefs.sound) ga().resume();
-    sizeCanvas(); buildFloor(); resetGameData();
-    gameState = 'PLAY';
-    navScreen(null); // hide screens
-    hud.classList.add('show-hud');
-    lsRow.classList.add('show-ls');
-    ctrlWrap.classList.add('show-controls');
-    minimap.style.display = 'block';
-
-    clearTimeout(comboTimer);
-    comboBadge.classList.remove('show');
+function updateSwordBar(){
+    if(!player||!player.hasSword){swordWrap.classList.remove('show');return;}
+    const rem=Math.max(0,swordExpiry-Date.now());
+    const pct=rem/SWORD_DURATION*100;
+    swordBar.style.width=pct+'%';
+    swordBar.className=pct<25?'low':'';
+    if(rem<=0){
+        expireSword();
+    } else {
+        swordTimerRAF=requestAnimationFrame(updateSwordBar);
+    }
+}
+function expireSword(){
+    if(!player)return;
+    player.hasSword=false;
+    swordWrap.classList.remove('show');
     modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
-    scoreEl.textContent=0;totalEl.textContent=NUM_TROPHIES;
+    spawnFloat(player.x,player.y,'⚔ GONE!');
+    sfx.swordend();
 }
 
-function triggerEnd(win){
-    gameState = 'DEAD';
-    hud.classList.remove('show-hud');
-    lsRow.classList.remove('show-ls');
-    ctrlWrap.classList.remove('show-controls');
-    minimap.style.display = 'none';
+// ── EMPTY TILE FINDER ──
+function emptyTile(){
+    let x,y,tries=0;
+    while(tries++<3000){
+        x=1+rnd(COLS-2);y=1+rnd(ROWS-2);
+        if(map[y][x]!==0)continue;
+        if(player&&x===player.x&&y===player.y)continue;
+        const occ=scrolls.some(t=>t.x===x&&t.y===y)||
+                  enemies.some(e=>e.x===x&&e.y===y)||
+                  (sword&&!sword.collected&&sword.x===x&&sword.y===y)||
+                  (shield&&!shield.collected&&shield.x===x&&shield.y===y);
+        if(!occ)return{x,y};
+    }
+    return{x:1,y:3};
+}
 
+// ── RESET ──
+function resetLevelData(){
+    player={x:1,y:1,hasSword:false,hasShield:false,dead:false};
+    sword={x:0,y:0,collected:false};
+    shield={x:0,y:0,collected:false};
+    scrolls=[];enemies=[];score=0;
+    kills=0;bestCombo=1;comboCount=0;highlights=[];
+    clearTimeout(comboTimer);
+    swordWrap.classList.remove('show');
+    cancelAnimationFrame(swordTimerRAF);
+
+    for(let i=0;i<levelCfg.trophies;i++)scrolls.push(emptyTile());
+    const eType=currentLevel===3?'enemy2':'enemy';
+    for(let i=0;i<levelCfg.enemies;i++){const t=emptyTile();enemies.push({...t,type:eType});}
+    const sp=emptyTile();sword={x:sp.x,y:sp.y,collected:false};
+    if(levelCfg.hasShield){const sh=emptyTile();shield={x:sh.x,y:sh.y,collected:false};}
+}
+
+// ── NAVIGATION ──
+const ALL_SCREENS=['screen-menu','screen-cutscene','screen-levelcomplete',
+                   'screen-gameover','screen-victory','screen-settings','screen-credits'];
+function nav(id){
+    ALL_SCREENS.forEach(s=>document.getElementById(s).classList.remove('show'));
+    if(id)document.getElementById(id).classList.add('show');
+    if(id==='screen-settings')refreshSettingsUI();
+}
+function showGameUI(show){
+    hud.classList.toggle('active',show);
+    lsRow.classList.toggle('active',show);
+    ctrlWrap.classList.toggle('active',show);
+    minimapEl.style.display=show?'block':'none';
+}
+
+// ── CUTSCENE ──
+function startCutscene(lvl){
+    if(prefs.sound)try{ga().resume();}catch(e){}
+    currentLevel=lvl;
+    setupLevel(lvl);sizeCanvas();buildFloor();resetLevelData();
+    const d=LEVEL_DATA[lvl-1];
+    document.getElementById('cs-level').textContent='LEVEL '+lvl+' OF 3';
+    document.getElementById('cs-title').textContent=d.name;
+    document.getElementById('cs-story').textContent=d.story;
+    document.getElementById('cs-tip').textContent=d.tip;
+    showGameUI(false);
+    nav('screen-cutscene');
+    gameState='CUTSCENE';
+}
+
+function beginLevel(){
+    nav(null);
+    showGameUI(true);
+    modeEl.textContent='RUN!';modeEl.classList.remove('slayer');
+    scoreEl.textContent=0;totalEl.textContent=levelCfg.trophies;
+    document.getElementById('level-badge').textContent='L'+currentLevel;
+    comboBadge.classList.remove('show');
+    gameState='PLAY';
+}
+
+function nextLevel(){
+    if(currentLevel<3){
+        startCutscene(currentLevel+1);
+    } else {
+        // All 3 done
+        document.getElementById('fin-scrolls').textContent=totalScrolls;
+        document.getElementById('fin-kills').textContent=totalKills;
+        document.getElementById('fin-best').textContent=prefs.bestScore;
+        showGameUI(false);
+        nav('screen-victory');
+        sfx.win();
+        gameState='VICTORY';
+    }
+}
+
+// ── LEVEL COMPLETE ──
+function triggerLevelComplete(){
+    gameState='LEVELCOMPLETE';
+    totalScrolls+=score;totalKills+=kills;
+    if(score>prefs.bestScore){prefs.bestScore=score;savePrefs();}
+    document.getElementById('lc-title').textContent='LEVEL '+currentLevel+' CLEAR!';
+    document.getElementById('lc-scrolls').textContent=score+'/'+levelCfg.trophies;
+    document.getElementById('lc-kills').textContent=kills;
+    document.getElementById('lc-combo').textContent='x'+bestCombo;
+    const btn=document.getElementById('lc-btn');
+    btn.textContent=currentLevel<3?'NEXT LEVEL ▶':'FINAL RESULTS ▶';
+    showGameUI(false);
+    sfx.lvlclear();
+    setTimeout(()=>nav('screen-levelcomplete'),500);
+}
+
+// ── GAME OVER ──
+function triggerDeath(){
+    gameState='DEAD';
     document.getElementById('st-t').textContent=score;
     document.getElementById('st-k').textContent=kills;
     document.getElementById('st-c').textContent='x'+bestCombo;
-    
-    if(score > prefs.bestScore) { prefs.bestScore = score; savePrefs(); }
-
-    const gov = document.getElementById('screen-gameover');
-    if(win){
-        document.getElementById('ov-icon').textContent='🏆';
-        document.getElementById('ov-title').textContent='VICTORY!';
-        document.getElementById('ov-desc').textContent='ALL TROPHIES COLLECTED';
-        gov.classList.remove('death'); sfx.win();
-    } else {
-        document.getElementById('ov-icon').textContent='💀';
-        document.getElementById('ov-title').textContent='YOU DIED!';
-        document.getElementById('ov-desc').textContent='THE GLITCH CAUGHT YOU.';
-        gov.classList.add('death'); sfx.death();
-    }
-    setTimeout(()=>navScreen('screen-gameover'), 600);
+    document.getElementById('ov-icon').textContent='💀';
+    document.getElementById('ov-title').textContent='YOU FELL!';
+    document.getElementById('ov-desc').textContent='THE SHADOW CLAN STOPPED YOU.';
+    const gov=document.getElementById('screen-gameover');
+    gov.classList.add('death');
+    showGameUI(false);sfx.death();
+    setTimeout(()=>nav('screen-gameover'),500);
 }
 
-// ── enemy AI ──
+// ── ENEMY AI ──
 function moveEnemies(){
-    enemies.forEach((en,idx)=>{
+    const speed=levelCfg.enemySpeed;
+    function tryMove(en,idx){
         let dx=player.x-en.x,dy=player.y-en.y,nx=en.x,ny=en.y;
         if(Math.abs(dx)>=Math.abs(dy)){
             nx+=Math.sign(dx);
@@ -534,112 +767,153 @@ function moveEnemies(){
             if(map[ny][nx]===1||enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){ny=en.y;nx+=Math.sign(dx);}
         }
         if(map[ny]&&map[ny][nx]!==1&&!enemies.some((e,i)=>i!==idx&&e.x===nx&&e.y===ny)){en.x=nx;en.y=ny;}
-        
         if(en.x===player.x&&en.y===player.y){
             if(player.hasSword){
-                vibe(); en.dead=true;kills++;spawnFloat(en.x,en.y,'✦ SLAIN',true);
-                addHL(en.x,en.y,'#ef4444');sfx.kill();doCombo();
-            } else { 
-                shake(); player.dead=true; triggerEnd(false); 
+                vibe(30);en.dead=true;kills++;
+                spawnFloat(en.x,en.y,'✦ SLAIN','kill');
+                addHL(en.x,en.y,'#cc3333');sfx.kill();doCombo();
+            } else if(player.hasShield){
+                player.hasShield=false;shake();
+                spawnFloat(player.x,player.y,'🛡 BLOCKED!','shield');
+                sfx.hurt();
+            } else {
+                shake();player.dead=true;triggerDeath();
             }
         }
-    });
+    }
+    for(let s=0;s<speed;s++){
+        if(player.dead)break;
+        enemies.forEach((en,idx)=>{if(!en.dead)tryMove(en,idx);});
+    }
     enemies=enemies.filter(e=>!e.dead);
 }
 
-// ── player move ──
+// ── PLAYER MOVE ──
 function movePlayer(dir){
-    if(gameState !== 'PLAY') return;
+    if(gameState!=='PLAY')return;
     let nx=player.x,ny=player.y;
     if(dir==='w')ny--;if(dir==='s')ny++;
     if(dir==='a')nx--;if(dir==='d')nx++;
     if(ny<0||ny>=ROWS||nx<0||nx>=COLS||map[ny][nx]===1)return;
-    player.x=nx;player.y=ny;sfx.step(); vibe();
+    player.x=nx;player.y=ny;sfx.step();vibe(20);
 
-    const ti=trophies.findIndex(t=>t.x===nx&&t.y===ny);
+    // Scroll pickup
+    const ti=scrolls.findIndex(t=>t.x===nx&&t.y===ny);
     if(ti>-1){
-        trophies.splice(ti,1);score++;scoreEl.textContent=score;
-        addHL(nx,ny,'#eab308');
+        scrolls.splice(ti,1);score++;scoreEl.textContent=score;
+        addHL(nx,ny,'#c9a227');
         const m=doCombo();
         spawnFloat(nx,ny,m>=2?'+'+m+' COMBO!':'+1');
-        sfx.trophy(); vibe();
-        if(score>=NUM_TROPHIES)return triggerEnd(true);
+        sfx.scroll();vibe(30);
+        if(score>=levelCfg.trophies)return triggerLevelComplete();
     }
+    // Sword pickup
     if(!sword.collected&&nx===sword.x&&ny===sword.y){
         sword.collected=true;player.hasSword=true;
         modeEl.textContent='SLAYER!';modeEl.classList.add('slayer');
-        addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'⚔ ARMED!');sfx.sword(); vibe();
+        addHL(nx,ny,'#e8c547');spawnFloat(nx,ny,'⚔ ARMED!');
+        sfx.sword();vibe(50);
+        startSwordTimer();
     }
-    
+    // Shield pickup
+    if(levelCfg.hasShield&&!shield.collected&&nx===shield.x&&ny===shield.y){
+        shield.collected=true;player.hasShield=true;
+        addHL(nx,ny,'#60a5fa');spawnFloat(nx,ny,'🛡 SHIELDED!','shield');
+        sfx.shield();vibe(50);
+    }
+    // Step on enemy
     const ei=enemies.findIndex(e=>e.x===nx&&e.y===ny);
     if(ei>-1){
         if(player.hasSword){
-            vibe(); kills++;spawnFloat(nx,ny,'✦ SLAIN',true);
-            addHL(nx,ny,'#ef4444');enemies.splice(ei,1);sfx.kill();doCombo();
+            vibe(40);kills++;spawnFloat(nx,ny,'✦ SLAIN','kill');
+            addHL(nx,ny,'#cc3333');enemies.splice(ei,1);sfx.kill();doCombo();
+        } else if(player.hasShield){
+            player.hasShield=false;shake();
+            spawnFloat(player.x,player.y,'🛡 BLOCKED!','shield');sfx.hurt();
         } else {
-            shake(); player.dead=true; triggerEnd(false); return;
+            shake();player.dead=true;triggerDeath();return;
         }
     }
-    
-    if(!player.dead) moveEnemies();
+    if(!player.dead)moveEnemies();
 }
 
-// ── draw helpers ──
-const FB={grass:'#2d4a1e',grass1:'#2a4820',grass2:'#334f22',wall:'#1e1e30',trophy:'#eab308',sword:'#93c5fd',hero:'#22c55e',swordhero:'#16a34a',enemy:'#ef4444'};
+// ── FALLBACK COLORS ──
+const FB={
+    grass:'#2d4a1e',grass1:'#2a4820',grass2:'#334f22',
+    floor2:'#1c1428',floor3:'#1a0a0a',
+    wall:'#1e1e30',wall2:'#2a1a3a',wall3:'#2a0a0a',
+    scroll:'#c9a227',sword:'#e8c547',shield:'#60a5fa',
+    hero:'#f0e6d0',swordhero:'#e8c547',
+    enemy:'#7c3aed',enemy2:'#cc3333'
+};
 function drawT(name,x,y){
     const px=x*TILE,py=y*TILE,img=imgs[name];
     if(img&&img.complete&&img.naturalWidth>0)ctx.drawImage(img,px,py,TILE,TILE);
-    else{ctx.fillStyle=FB[name]||'#555';ctx.fillRect(px,py,TILE,TILE);}
+    else{ctx.fillStyle=FB[name]||'#444';ctx.fillRect(px,py,TILE,TILE);}
 }
 
-// ── minimap ──
+// ── MINIMAP ──
 function drawMinimap(){
-    if(gameState !== 'PLAY') return;
-    const mm=4;mctx.clearRect(0,0,minimap.width,minimap.height);
+    if(gameState!=='PLAY')return;
+    const mm=isLS()?3:4;
+    mctx.clearRect(0,0,minimapEl.width,minimapEl.height);
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
-        mctx.fillStyle=map[y][x]===1?'#18182a':'#2d4a1e';
+        mctx.fillStyle=map[y][x]===1?'#18182a':FB[levelCfg.floor[0]]||'#2d4a1e';
         mctx.fillRect(x*mm,y*mm,mm,mm);
     }
-    mctx.fillStyle='#eab308';trophies.forEach(t=>mctx.fillRect(t.x*mm+1,t.y*mm+1,mm-1,mm-1));
-    if(!sword.collected){mctx.fillStyle='#93c5fd';mctx.fillRect(sword.x*mm+1,sword.y*mm+1,mm-1,mm-1);}
-    mctx.fillStyle='#ef4444';enemies.forEach(e=>mctx.fillRect(e.x*mm+1,e.y*mm+1,mm-1,mm-1));
-    mctx.fillStyle='#22c55e';mctx.fillRect(player.x*mm,player.y*mm,mm,mm);
+    mctx.fillStyle='#c9a227';scrolls.forEach(t=>mctx.fillRect(t.x*mm+1,t.y*mm+1,mm-1,mm-1));
+    if(!sword.collected){mctx.fillStyle='#e8c547';mctx.fillRect(sword.x*mm+1,sword.y*mm+1,mm-1,mm-1);}
+    if(levelCfg.hasShield&&!shield.collected){mctx.fillStyle='#60a5fa';mctx.fillRect(shield.x*mm+1,shield.y*mm+1,mm-1,mm-1);}
+    mctx.fillStyle='#cc3333';enemies.forEach(e=>mctx.fillRect(e.x*mm+1,e.y*mm+1,mm-1,mm-1));
+    mctx.fillStyle='#f0e6d0';mctx.fillRect(player.x*mm,player.y*mm,mm,mm);
 }
 
-// ── main loop ──
+// ── MAIN LOOP ──
 function loop(ts){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw floor+walls
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
         drawT(floorV[y]&&floorV[y][x]||'grass',x,y);
-        if(map[y][x]===1)drawT('wall',x,y);
+        if(map[y][x]===1)drawT(levelCfg.wall,x,y);
     }
-    
+    // highlights
     highlights=highlights.filter(h=>{
-        h.alpha-=h.decay;
-        if(h.alpha<=0)return false;
+        h.alpha-=h.decay;if(h.alpha<=0)return false;
         ctx.save();ctx.globalAlpha=h.alpha;ctx.fillStyle=h.color;
-        ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);ctx.restore();
-        return true;
+        ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);ctx.restore();return true;
     });
-    
-    if(!sword.collected){
-        const bob=Math.round(Math.sin(ts/300));
-        ctx.save();ctx.translate(0,bob);drawT('sword',sword.x,sword.y);ctx.restore();
+    // sword bob
+    if(sword&&!sword.collected){
+        const b=Math.round(Math.sin(ts/280));
+        ctx.save();ctx.translate(0,b);drawT('sword',sword.x,sword.y);ctx.restore();
     }
-    
-    trophies.forEach(t=>{
-        const bob=Math.round(Math.sin(ts/400+t.x*.5));
-        ctx.save();ctx.translate(0,bob);drawT('trophy',t.x,t.y);ctx.restore();
+    // shield bob
+    if(levelCfg&&levelCfg.hasShield&&shield&&!shield.collected){
+        const b=Math.round(Math.sin(ts/320+1));
+        ctx.save();ctx.translate(0,b);drawT('shield',shield.x,shield.y);ctx.restore();
+    }
+    // scrolls bob
+    if(scrolls)scrolls.forEach(t=>{
+        const b=Math.round(Math.sin(ts/400+t.x*.5));
+        ctx.save();ctx.translate(0,b);drawT('scroll',t.x,t.y);ctx.restore();
     });
-    
-    enemies.forEach(e=>drawT('enemy',e.x,e.y));
-    if(!player.dead)drawT(player.hasSword?'swordhero':'hero',player.x,player.y);
-    
+    // enemies
+    if(enemies)enemies.forEach(e=>drawT(e.type||'enemy',e.x,e.y));
+    // player
+    if(player&&!player.dead){
+        const sp=player.hasSword?'swordhero':'hero';
+        drawT(sp,player.x,player.y);
+        // shield indicator ring
+        if(player.hasShield){
+            ctx.save();ctx.globalAlpha=0.5;ctx.strokeStyle='#60a5fa';ctx.lineWidth=1.5;
+            ctx.strokeRect(player.x*TILE+1,player.y*TILE+1,TILE-2,TILE-2);ctx.restore();
+        }
+    }
     drawMinimap();
     requestAnimationFrame(loop);
 }
 
-// ── input ──
+// ── INPUT ──
 function bind(id,dir){
     const el=document.getElementById(id);if(!el)return;
     el.addEventListener('touchstart',e=>{e.preventDefault();movePlayer(dir);},{passive:false});
@@ -647,18 +921,35 @@ function bind(id,dir){
 }
 ['w','a','s','d'].forEach(k=>bind('p'+k,k));
 bind('lw','w');bind('la','a');bind('ls_','s');bind('ld','d');
-
 window.addEventListener('keydown',e=>{
     const m={w:'w',ArrowUp:'w',s:'s',ArrowDown:'s',a:'a',ArrowLeft:'a',d:'d',ArrowRight:'d'};
     if(m[e.key]){e.preventDefault();movePlayer(m[e.key]);}
 });
-
-window.addEventListener('resize',()=> {
-    if(gameState === 'PLAY') sizeCanvas();
+window.addEventListener('resize',()=>{
+    if(gameState==='PLAY'){setupLevel(currentLevel);sizeCanvas();}
 });
 
-// Setup Initial UI state
-updateSettingUI();
+// ── POKI SDK STUB ──
+// Replace with real Poki SDK when submitting
+window.PokiSDK = window.PokiSDK || {
+    init:()=>Promise.resolve(),
+    gameLoadingStart:()=>{},
+    gameLoadingFinished:()=>{},
+    gameplayStart:()=>{},
+    gameplayStop:()=>{},
+    commercialBreak:()=>Promise.resolve(),
+    rewardedBreak:()=>Promise.resolve(),
+};
+PokiSDK.gameLoadingStart();
+// Signal load complete after assets load
+const _origReady = onAssetsReady;
+function onAssetsReady(){
+    _origReady();
+    PokiSDK.gameLoadingFinished();
+}
+
+// ── INIT ──
+refreshSettingsUI();
 </script>
 </body>
 </html>
