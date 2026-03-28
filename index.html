@@ -549,7 +549,10 @@ ALL_ASSETS.forEach(n=>{
     imgs[n]=i;
 });
 function onAssetsReady(){
-    setupLevel(1);sizeCanvas();buildFloor();
+    setupLevel(1);
+    sizeCanvas();
+    buildFloor();
+    try{ PokiSDK.gameLoadingFinished(); }catch(e){}
     requestAnimationFrame(loop);
 }
 
@@ -871,6 +874,7 @@ function drawMinimap(){
 // ── MAIN LOOP ──
 function loop(ts){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(gameState==='MENU'||gameState==='CUTSCENE'||!player){requestAnimationFrame(loop);return;}
     // draw floor+walls
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
         drawT(floorV[y]&&floorV[y][x]||'grass',x,y);
@@ -930,7 +934,9 @@ window.addEventListener('resize',()=>{
 });
 
 // ── POKI SDK STUB ──
-// Replace with real Poki SDK when submitting
+// When submitting to Poki, add their real SDK script tag in <head>
+// and remove this stub. The gameLoadingFinished call is already
+// wired inside onAssetsReady below via pokiReady().
 window.PokiSDK = window.PokiSDK || {
     init:()=>Promise.resolve(),
     gameLoadingStart:()=>{},
@@ -941,12 +947,6 @@ window.PokiSDK = window.PokiSDK || {
     rewardedBreak:()=>Promise.resolve(),
 };
 PokiSDK.gameLoadingStart();
-// Signal load complete after assets load
-const _origReady = onAssetsReady;
-function onAssetsReady(){
-    _origReady();
-    PokiSDK.gameLoadingFinished();
-}
 
 // ── INIT ──
 refreshSettingsUI();
